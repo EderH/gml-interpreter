@@ -12,7 +12,7 @@ public class NodeDeserializer implements JsonDeserializer<Node> {
 
         Node node = new Node();
 
-        node.setID(jsonObject.get("id").getAsString());
+        node.setId(jsonObject.get("id").getAsString());
         node.setNodeType(jsonObject.get("nodeType").getAsString());
 
         return node;

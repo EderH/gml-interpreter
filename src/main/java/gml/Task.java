@@ -1,9 +1,12 @@
 package gml;
 
+import interpret.IElementVisitor;
 import lombok.Getter;
 import lombok.Setter;
 
-public abstract class Task extends Element {
+import java.util.LinkedList;
+
+public  class Task extends Element {
     @Setter
     @Getter
     private String name;
@@ -13,9 +16,16 @@ public abstract class Task extends Element {
     @Setter
     @Getter
     private String taskType;
+    @Setter
+    @Getter
+    private LinkedList<Element> subTasks;
 
     public Task() {
+    }
 
+    @Override
+    public void accept(IElementVisitor elementVisitor) {
+        elementVisitor.visit(this);
     }
 
     @Override

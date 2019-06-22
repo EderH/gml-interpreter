@@ -1,13 +1,13 @@
 package gml;
 
-import interpret.ElementVisitor;
+import interpret.IElementVisitor;
 import lombok.Getter;
 import lombok.Setter;
 
 public abstract class Element {
     @Getter
     @Setter
-    private String ID;
+    private String id;
 
-    public abstract void accept(ElementVisitor elementVisitor);
+    public abstract void accept(IElementVisitor elementVisitor);
 }

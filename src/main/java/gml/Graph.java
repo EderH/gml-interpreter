@@ -1,6 +1,6 @@
 package gml;
 
-import interpret.ElementVisitor;
+import interpret.IElementVisitor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,7 +24,7 @@ public class Graph extends Element{
     }
 
     @Override
-    public void accept(ElementVisitor elementVisitor) {
+    public void accept(IElementVisitor elementVisitor) {
         elementVisitor.visit(this);
     }
 
@@ -55,7 +55,7 @@ public class Graph extends Element{
         List<Edge> sourceList = new ArrayList<>();
         for (int i = 0; i < edgeList.size(); i++) {
             Edge edge = edgeList.get(i);
-            if (edge.getSourceID().equals(source.getID())) {
+            if (edge.getSourceID().equals(source.getId())) {
                 sourceList.add(edge);
             }
         }
@@ -65,7 +65,7 @@ public class Graph extends Element{
     private Element findElementWithTarget(Edge target) {
         for (int i = 0; i < elementList.size(); i++) {
             Element element = elementList.get(i);
-            if (element.getID().equals(target.getTargetID())) {
+            if (element.getId().equals(target.getTargetID())) {
                 return element;
             }
         }
@@ -76,6 +76,11 @@ public class Graph extends Element{
         double random = Math.random();
         WeightedEdge firstEdge = (WeightedEdge)sourceList.get(0);
         WeightedEdge secondEdge = (WeightedEdge)sourceList.get(1);
+        if(firstEdge.getProbability() > secondEdge.getProbability()) {
+            WeightedEdge temp = firstEdge;
+            firstEdge = secondEdge;
+            secondEdge = temp;
+        }
         if(random < firstEdge.getProbability()) {
             return firstEdge;
         } else if( random < secondEdge.getProbability()) {

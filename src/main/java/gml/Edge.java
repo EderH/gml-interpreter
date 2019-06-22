@@ -1,6 +1,6 @@
 package gml;
 
-import interpret.ElementVisitor;
+import interpret.IElementVisitor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +13,7 @@ public class Edge extends Element{
     private String targetID;
 
     @Override
-    public void accept(ElementVisitor elementVisitor) {
+    public void accept(IElementVisitor elementVisitor) {
         elementVisitor.visit(this);
     }
 }

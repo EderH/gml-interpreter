@@ -23,7 +23,7 @@ public class EdgeDeserializer implements JsonDeserializer<Edge> {
             edge = new Edge();
         }
 
-        edge.setID(jsonObject.get("id").getAsString());
+        edge.setId(jsonObject.get("id").getAsString());
         edge.setSourceID(jsonObject.get("sourceId").getAsString());
         edge.setTargetID(jsonObject.get("targetId").getAsString());
 

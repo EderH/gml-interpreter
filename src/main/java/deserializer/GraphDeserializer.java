@@ -36,7 +36,7 @@ public class GraphDeserializer implements JsonDeserializer<Graph> {
 
 
         Graph graph = new Graph();
-        graph.setID(jsonID.getAsString());
+        graph.setId(jsonID.getAsString());
         graph.setElementList(elementList);
         graph.setTaskList(taskList);
         graph.setEdgeList(edgeList);

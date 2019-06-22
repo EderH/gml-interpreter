@@ -1,10 +1,10 @@
 {
     "revision": 0,
     "type": "graph",
-    "id": "sprotty",
+    "id": "task3",
     "children": [
         {
-            "name": "Push",
+            "name": "Move",
             "expanded": false,
             "duration": 20,
             "taskType": "manual",
@@ -18,12 +18,12 @@
                 "height": 52.0
             },
             "type": "task:manual",
-            "id": "task1",
+            "id": "move1",
             "children": [
                 {
                     "layout": "hbox",
                     "type": "comp:header",
-                    "id": "task1_header",
+                    "id": "move1_header",
                     "children": [
                         {
                             "layout": "stack",
@@ -37,26 +37,26 @@
                                 "hAlign": "center"
                             },
                             "type": "icon",
-                            "id": "task1_icon",
+                            "id": "move1_icon",
                             "children": [
                                 {
                                     "text": "M",
                                     "type": "label:icon",
-                                    "id": "task1_ticon"
+                                    "id": "move1_ticon"
                                 }
                             ]
                         },
                         {
                             "text": "Push",
                             "type": "label:heading",
-                            "id": "task1_classname"
+                            "id": "move1_classname"
                         }
                     ]
                 }
             ]
         },
         {
-            "name": "ChkWt",
+            "name": "Rotate",
             "expanded": false,
             "duration": 10,
             "taskType": "automated",
@@ -67,12 +67,12 @@
                 "y": 200.0
             },
             "type": "task:automated",
-            "id": "task2",
+            "id": "rotate1",
             "children": [
                 {
                     "layout": "hbox",
                     "type": "comp:header",
-                    "id": "task2_header",
+                    "id": "rotate1_header",
                     "children": [
                         {
                             "layout": "stack",
@@ -86,26 +86,26 @@
                                 "hAlign": "center"
                             },
                             "type": "icon",
-                            "id": "task2_icon",
+                            "id": "rotate1_icon",
                             "children": [
                                 {
                                     "text": "A",
                                     "type": "label:icon",
-                                    "id": "task2_ticon"
+                                    "id": "rotate1_ticon"
                                 }
                             ]
                         },
                         {
                             "text": "ChkWt",
                             "type": "label:heading",
-                            "id": "task2_classname"
+                            "id": "rotate1_classname"
                         }
                     ]
                 }
             ]
         },
         {
-            "name": "RflWt",
+            "name": "Light",
             "expanded": false,
             "duration": 200,
             "taskType": "manual",
@@ -115,12 +115,12 @@
                 "y": 150.0
             },
             "type": "task:manual",
-            "id": "task3",
+            "id": "light1",
             "children": [
                 {
                     "layout": "hbox",
                     "type": "comp:header",
-                    "id": "task3_header",
+                    "id": "light1_header",
                     "children": [
                         {
                             "layout": "stack",
@@ -134,26 +134,26 @@
                                 "hAlign": "center"
                             },
                             "type": "icon",
-                            "id": "task3_icon",
+                            "id": "light1_icon",
                             "children": [
                                 {
                                     "text": "M",
                                     "type": "label:icon",
-                                    "id": "task3_ticon"
+                                    "id": "light1_ticon"
                                 }
                             ]
                         },
                         {
                             "text": "RflWt",
                             "type": "label:heading",
-                            "id": "task3_classname"
+                            "id": "light1_classname"
                         }
                     ]
                 }
             ]
         },
         {
-            "name": "WtOK",
+            "name": "Wait",
             "expanded": false,
             "duration": 20,
             "taskType": "automated",
@@ -164,12 +164,12 @@
                 "y": 250.0
             },
             "type": "task:manual",
-            "id": "task4",
+            "id": "wait1",
             "children": [
                 {
                     "layout": "hbox",
                     "type": "comp:header",
-                    "id": "task4_header",
+                    "id": "wait1_header",
                     "children": [
                         {
                             "layout": "stack",
@@ -183,26 +183,26 @@
                                 "hAlign": "center"
                             },
                             "type": "icon",
-                            "id": "task4_icon",
+                            "id": "wait1_icon",
                             "children": [
                                 {
                                     "text": "A",
                                     "type": "label:icon",
-                                    "id": "task4_ticon"
+                                    "id": "wait1_ticon"
                                 }
                             ]
                         },
                         {
                             "text": "WtOK",
                             "type": "label:heading",
-                            "id": "task4_classname"
+                            "id": "wait1_classname"
                         }
                     ]
                 }
             ]
         },
         {
-            "name": "ChkTp",
+            "name": "Repeat",
             "expanded": false,
             "duration": 100,
             "taskType": "manual",
@@ -217,12 +217,12 @@
                 "height": 52.0
             },
             "type": "task:manual",
-            "id": "task5",
+            "id": "repeat1",
             "children": [
                 {
                     "layout": "hbox",
                     "type": "comp:header",
-                    "id": "task5_header",
+                    "id": "repeat1_header",
                     "children": [
                         {
                             "layout": "stack",
@@ -236,170 +236,19 @@
                                 "hAlign": "center"
                             },
                             "type": "icon",
-                            "id": "task5_icon",
+                            "id": "repeat1_icon",
                             "children": [
                                 {
                                     "text": "M",
                                     "type": "label:icon",
-                                    "id": "task5_ticon"
+                                    "id": "repeat1_ticon"
                                 }
                             ]
                         },
                         {
                             "text": "ChkTp",
                             "type": "label:heading",
-                            "id": "task5_classname"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "PreHeat",
-            "expanded": false,
-            "duration": 1000,
-            "taskType": "manual",
-            "reference": "BrewingUnit",
-            "layout": "vbox",
-            "position": {
-                "x": 493.0,
-                "y": 349.0
-            },
-            "type": "task:manual",
-            "id": "task6",
-            "children": [
-                {
-                    "layout": "hbox",
-                    "type": "comp:header",
-                    "id": "task6_header",
-                    "children": [
-                        {
-                            "layout": "stack",
-                            "commandId": "simulate-command",
-                            "position": {
-                                "x": 0.0,
-                                "y": 0.0
-                            },
-                            "layoutOptions": {
-                                "resizeContainer": false,
-                                "hAlign": "center"
-                            },
-                            "type": "icon",
-                            "id": "task6_icon",
-                            "children": [
-                                {
-                                    "text": "M",
-                                    "type": "label:icon",
-                                    "id": "task6_ticon"
-                                }
-                            ]
-                        },
-                        {
-                            "text": "PreHeat",
-                            "type": "label:heading",
-                            "id": "task6_classname"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "KeepTp",
-            "expanded": false,
-            "duration": 50,
-            "taskType": "manual",
-            "reference": "BrewingUnit",
-            "layout": "vbox",
-            "position": {
-                "x": 600.0,
-                "y": 500.0
-            },
-            "type": "task:manual",
-            "id": "task7",
-            "children": [
-                {
-                    "layout": "hbox",
-                    "type": "comp:header",
-                    "id": "task7_header",
-                    "children": [
-                        {
-                            "layout": "stack",
-                            "commandId": "simulate-command",
-                            "position": {
-                                "x": 0.0,
-                                "y": 0.0
-                            },
-                            "layoutOptions": {
-                                "resizeContainer": false,
-                                "hAlign": "center"
-                            },
-                            "type": "icon",
-                            "id": "task7_icon",
-                            "children": [
-                                {
-                                    "text": "M",
-                                    "type": "label:icon",
-                                    "id": "task7_ticon"
-                                }
-                            ]
-                        },
-                        {
-                            "text": "KeepTp",
-                            "type": "label:heading",
-                            "id": "task7_classname"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "Brew",
-            "expanded": false,
-            "duration": 1750,
-            "taskType": "manual",
-            "reference": "Brew",
-            "layout": "vbox",
-            "position": {
-                "x": 200.0,
-                "y": 456.0
-            },
-            "size": {
-                "width": 103.34375,
-                "height": 52.0
-            },
-            "type": "task:manual",
-            "id": "task8",
-            "children": [
-                {
-                    "layout": "hbox",
-                    "type": "comp:header",
-                    "id": "task8_header",
-                    "children": [
-                        {
-                            "layout": "stack",
-                            "commandId": "simulate-command",
-                            "position": {
-                                "x": 0.0,
-                                "y": 0.0
-                            },
-                            "layoutOptions": {
-                                "resizeContainer": false,
-                                "hAlign": "center"
-                            },
-                            "type": "icon",
-                            "id": "task8_icon",
-                            "children": [
-                                {
-                                    "text": "M",
-                                    "type": "label:icon",
-                                    "id": "task8_ticon"
-                                }
-                            ]
-                        },
-                        {
-                            "text": "Brew",
-                            "type": "label:heading",
-                            "id": "task8_classname"
+                            "id": "repeat1_classname"
                         }
                     ]
                 }
@@ -415,15 +264,6 @@
             "id": "activityNode9"
         },
         {
-            "nodeType": "decisionNode",
-            "position": {
-                "x": 650.0,
-                "y": 316.0
-            },
-            "type": "activityNode:decision",
-            "id": "activityNode11"
-        },
-        {
             "nodeType": "mergeNode",
             "position": {
                 "x": 550.0,
@@ -433,22 +273,13 @@
             "id": "activityNode10"
         },
         {
-            "nodeType": "mergeNode",
-            "position": {
-                "x": 550.0,
-                "y": 466.0
-            },
-            "type": "activityNode:merge",
-            "id": "activityNode12"
-        },
-        {
-            "sourceId": "task1",
-            "targetId": "task2",
+            "sourceId": "move1",
+            "targetId": "rotate1",
             "type": "edge",
             "id": "edge1"
         },
         {
-            "sourceId": "task2",
+            "sourceId": "rotate1",
             "targetId": "activityNode9",
             "type": "edge",
             "id": "edge2"
@@ -456,7 +287,7 @@
         {
             "probability": "high",
             "sourceId": "activityNode9",
-            "targetId": "task3",
+            "targetId": "light1",
             "routingPoints": [
                 {
                     "x": 392.31283182362176,
@@ -469,65 +300,27 @@
         {
             "probability": "high",
             "sourceId": "activityNode9",
-            "targetId": "task4",
+            "targetId": "wait1",
             "type": "edge:weighted",
             "id": "edge4"
         },
         {
-            "sourceId": "task3",
+            "sourceId": "light1",
             "targetId": "activityNode10",
             "type": "edge",
             "id": "edge5"
         },
         {
-            "sourceId": "task4",
+            "sourceId": "wait1",
             "targetId": "activityNode10",
             "type": "edge",
             "id": "edge6"
         },
         {
             "sourceId": "activityNode10",
-            "targetId": "task5",
+            "targetId": "repeat1",
             "type": "edge",
             "id": "edge7"
-        },
-        {
-            "sourceId": "task5",
-            "targetId": "activityNode11",
-            "type": "edge",
-            "id": "edge8"
-        },
-        {
-            "probability": "high",
-            "sourceId": "activityNode11",
-            "targetId": "task6",
-            "type": "edge:weighted",
-            "id": "edge9"
-        },
-        {
-            "probability": "low",
-            "sourceId": "activityNode11",
-            "targetId": "task7",
-            "type": "edge:weighted",
-            "id": "edge10"
-        },
-        {
-            "sourceId": "task6",
-            "targetId": "activityNode12",
-            "type": "edge",
-            "id": "edge11"
-        },
-        {
-            "sourceId": "task7",
-            "targetId": "activityNode12",
-            "type": "edge",
-            "id": "edge12"
-        },
-        {
-            "sourceId": "activityNode12",
-            "targetId": "task8",
-            "type": "edge",
-            "id": "edge13"
         }
     ]
 }
