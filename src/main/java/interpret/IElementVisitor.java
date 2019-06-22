@@ -5,7 +5,7 @@ import gml.Graph;
 import gml.Node;
 import gml.Task;
 
-public interface ElementVisitor {
+public interface IElementVisitor {
 
     public void visit(Graph graph);
 
