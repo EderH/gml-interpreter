@@ -3,9 +3,7 @@ package debugger;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -29,12 +27,12 @@ public class DebuggerServer {
 
                 System.out.println("A new client is connected : " + s);
 
-                DataInputStream dis = new DataInputStream(s.getInputStream());
-                DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+                InputStreamReader isr = new InputStreamReader(s.getInputStream());
+                OutputStreamWriter osw = new OutputStreamWriter(s.getOutputStream());
 
                 System.out.println("Assigning new thread for this client");
 
-                es.execute(new ClientHandler(s, dis, dos));
+                es.execute(new ClientHandler(s, isr, osw));
 
             } catch (Exception e) {
                 es.shutdown();
@@ -57,34 +55,34 @@ public class DebuggerServer {
 
 
 class ClientHandler implements Runnable {
-    private final DataInputStream dis;
-    private final DataOutputStream dos;
+
+    private final BufferedReader br;
+    private final BufferedWriter bw;
     private final Socket socket;
     @Setter
     @Getter
     private Debugger debugger;
 
 
-    public ClientHandler(Socket socket, DataInputStream dis, DataOutputStream dos) {
+    public ClientHandler(Socket socket, InputStreamReader inputStreamReader, OutputStreamWriter outputStreamWriter) {
         this.socket = socket;
-        this.dis = dis;
-        this.dos = dos;
+        this.br = new BufferedReader(inputStreamReader);
+        this.bw = new BufferedWriter(outputStreamWriter);
     }
 
     public void run() {
         String dataInput;
         debugger = new Debugger(this);
-
         try {
             while (true) {
-
-                dataInput = dis.readUTF();
-
+                dataInput = br.readLine();
+                System.out.println(dataInput);
                 int index = dataInput.indexOf("|");
                 String cmd = "";
                 String data = "";
                 if (index >= 0) {
-                    data = index < dataInput.length() - 1 ? dataInput.substring(index + 1) : "";
+                    data = (index < dataInput.length() - 1 ? dataInput.substring(index + 1) : "").trim();
+
                     cmd = dataInput.substring(0, index).trim();
                 }
                 System.out.println(cmd);
@@ -93,7 +91,6 @@ class ClientHandler implements Runnable {
                 if (action == DebuggerUtils.DebugAction.BYE) {
                     break;
                 } else {
-                    //debugger.processClientCommand(action, data);
                     debugger.processClientCommand(action, data);
                 }
             }
@@ -110,8 +107,9 @@ class ClientHandler implements Runnable {
     public void sendBack(String response) {
         try {
 
-            dos.writeUTF(response);
-            dos.flush();
+            bw.write(response);
+            System.out.println("Response: " + response);
+            bw.flush();
 
         } catch (IOException e) {
             System.out.println("Client disconnected: " + socket);
@@ -122,61 +120,12 @@ class ClientHandler implements Runnable {
 
     private void disconnect() {
         try {
-            dis.close();
-            dos.close();
+            br.close();
+            bw.close();
             socket.close();
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-}
-
-class DebuggerUtils {
-    public enum DebugAction {NONE, FILE, STEP, CONTINUE, STEP_IN, STEP_OUT, SET_BP, VARS, STACK, END, BYE}
-
-    public static DebugAction stringToAction(String str) {
-        DebugAction action = DebugAction.NONE;
-        switch (str) {
-            case "step":
-                action = DebugAction.STEP;
-                break;
-            case "continue":
-                action = DebugAction.CONTINUE;
-                break;
-            case "stepin":
-                action = DebugAction.STEP_IN;
-                break;
-            case "stepout":
-                action = DebugAction.STEP_OUT;
-                break;
-            case "file":
-                action = DebugAction.FILE;
-                break;
-            case "setbp":
-                action = DebugAction.SET_BP;
-                break;
-            case "vars":
-                action = DebugAction.VARS;
-                break;
-            case "stack":
-                action = DebugAction.STACK;
-                break;
-            case "bye":
-                action = DebugAction.BYE;
-                break;
-        }
-        return action;
-    }
-
-    public static String responseToken(DebugAction action) {
-        String response = "none\n";
-        switch (action) {
-            case END:
-                response = "end\n";
-                break;
-        }
-
-        return response;
     }
 }

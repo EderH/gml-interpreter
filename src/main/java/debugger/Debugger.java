@@ -5,8 +5,11 @@ import gml.Task;
 import interpret.Interpreter;
 import lombok.Getter;
 import lombok.Setter;
-import sun.awt.image.ImageWatched;
 
+import javax.websocket.CloseReason;
+import javax.websocket.Session;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.*;
 
 public class Debugger {
@@ -40,17 +43,23 @@ public class Debugger {
         String response = "";
 
         if (action == DebuggerUtils.DebugAction.FILE) {
-            //TODO: Get FILE FROM Client
+
             parsingJson = new ParsingJson();
             elementsStack.push(parsingJson.parse(data));
             currentElement = elementsStack.peek().getFirst();
+
         } else if (action == DebuggerUtils.DebugAction.SET_BP) {
+
             setBreakpoints(data);
             return;
+
         } else if (action == DebuggerUtils.DebugAction.CONTINUE) {
+
             continueExc = true;
             action = DebuggerUtils.DebugAction.STEP;
+
         } else if (action == DebuggerUtils.DebugAction.STEP_IN) {
+
             if( currentElement instanceof Task && (!(((Task) currentElement).getSubTasks().isEmpty()))) {
                 steppingIn = true;
                 continueExc = false;
@@ -58,19 +67,24 @@ public class Debugger {
                 parentStack.push(currentElement);
             }
             action = DebuggerUtils.DebugAction.STEP;
+
         } else if (action == DebuggerUtils.DebugAction.STEP_OUT) {
+
             continueExc = false;
             if(!parentStack.empty()) {
                 elementsStack.pop();
                 currentElement = parentStack.pop();
             }
             action = DebuggerUtils.DebugAction.STEP;
+
         } else if (action == DebuggerUtils.DebugAction.STACK) {
-            //TODO: return Stack
-            response = "STACK";
+
+            response = getStack();
+
         } else if (action == DebuggerUtils.DebugAction.VARS) {
-            //TODO: return Variables from state...
-            response = "VARS";
+
+            response = getVariables();
+
         } else if (action == DebuggerUtils.DebugAction.STEP) {
             continueExc = false;
         } else {
@@ -79,7 +93,8 @@ public class Debugger {
         }
 
         if (action == DebuggerUtils.DebugAction.STEP) {
-            if ( elementsStack.peek().size() == 0) {
+            responseToken = DebuggerUtils.DebugAction.STEP;
+            if ( elementsStack.isEmpty()) {
                 responseToken = DebuggerUtils.DebugAction.END;
             } else {
                 //TODO: check if step in or not
@@ -89,6 +104,15 @@ public class Debugger {
                 }*/
 
                 execute();
+                response = currentElement.getId() + "\n";
+
+                String vars = getVariables();
+                int varsCount = vars.equals("") ? 0 : vars.split("\n").length;
+                    response += varsCount + "\n";
+                    response += vars;
+
+                String stack = getStack();
+                response += stack;
 
                 if (elementsStack.size() == 0) {
                     responseToken = DebuggerUtils.DebugAction.END;
@@ -97,8 +121,55 @@ public class Debugger {
                 }
             }
         }
+
+        if (action == DebuggerUtils.DebugAction.END) {
+            responseToken = DebuggerUtils.DebugAction.END;
+        }
+
         response = DebuggerUtils.responseToken(responseToken) + response;
+
+        /*try {
+            if(!response.equals("none")) {
+                session.getBasicRemote().sendText(response);
+            }
+            if(responseToken == DebuggerUtils.DebugAction.END) {
+                session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "End of file"));
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }*/
+
         clientHandler.sendBack(response);
+
+    }
+
+    //TODO: Maybe change to StringBuilder
+    private String getStack(){
+        return currentElement.getId();
+    }
+
+    //TODO: Maybe change to StringBuilder
+    private String getVariables() {
+        String vars = "";
+        try {
+            if(currentElement instanceof Task) {
+                Task task = (Task) currentElement;
+                Field[] fields = task.getClass().getDeclaredFields();
+                for (Field field : fields) {
+                    String type = field.getType().toString();
+                    field.setAccessible(true);
+                    String value = field.get(task).toString();
+                    field.setAccessible(false);
+                    String name = field.getName();
+                    // TODO local or global value
+                    String var = "" + name + ":" + "0" + ":" + type + ":" + value;
+                    vars += var + "\n";
+                }
+            }
+        } catch (IllegalAccessException ex) {
+            ex.printStackTrace();
+        }
+        return vars;
     }
 
     private void setBreakpoints(String data) {
