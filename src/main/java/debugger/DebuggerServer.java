@@ -6,8 +6,7 @@ import lombok.Setter;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class DebuggerServer {
 
@@ -18,21 +17,18 @@ public class DebuggerServer {
 
         serverSocket = new ServerSocket(PORT);
         System.out.println("Server started and ready to accept clients");
+        ExecutorService es = Executors.newCachedThreadPool();
+        Socket socket;
         while (true) {
-            ExecutorService es = Executors.newCachedThreadPool();
-            Socket s;
 
             try {
-                s = serverSocket.accept();
+                socket = serverSocket.accept();
 
-                System.out.println("A new client is connected : " + s);
-
-                InputStreamReader isr = new InputStreamReader(s.getInputStream());
-                OutputStreamWriter osw = new OutputStreamWriter(s.getOutputStream());
+                System.out.println("A new client is connected : " + socket);
 
                 System.out.println("Assigning new thread for this client");
 
-                es.execute(new ClientHandler(s, isr, osw));
+                es.execute(new ClientHandler(socket));
 
             } catch (Exception e) {
                 es.shutdown();
@@ -56,72 +52,72 @@ public class DebuggerServer {
 
 class ClientHandler implements Runnable {
 
-    private final BufferedReader br;
-    private final BufferedWriter bw;
+    private BufferedReader br;
+    private BufferedOutputStream bos;
+    private OutputStream os;
     private final Socket socket;
     @Setter
     @Getter
     private Debugger debugger;
 
 
-    public ClientHandler(Socket socket, InputStreamReader inputStreamReader, OutputStreamWriter outputStreamWriter) {
+    public ClientHandler(Socket socket) {
         this.socket = socket;
-        this.br = new BufferedReader(inputStreamReader);
-        this.bw = new BufferedWriter(outputStreamWriter);
     }
 
     public void run() {
-        String dataInput;
         debugger = new Debugger(this);
         try {
-            while (true) {
-                dataInput = br.readLine();
-                System.out.println(dataInput);
-                int index = dataInput.indexOf("|");
-                String cmd = "";
-                String data = "";
-                if (index >= 0) {
-                    data = (index < dataInput.length() - 1 ? dataInput.substring(index + 1) : "").trim();
+            this.br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.os = socket.getOutputStream();
+            this.bos = new BufferedOutputStream(os);
 
-                    cmd = dataInput.substring(0, index).trim();
-                }
-                System.out.println(cmd);
-                DebuggerUtils.DebugAction action = DebuggerUtils.stringToAction(cmd);
+            while (true) {
+                String dataInput = br.readLine();
+
+                DebuggerUtils.DebugAction action = DebuggerUtils.stringToAction(dataInput);
 
                 if (action == DebuggerUtils.DebugAction.BYE) {
                     break;
                 } else {
-                    debugger.processClientCommand(action, data);
+                    debugger.processClientCommand(action, dataInput);
                 }
             }
         } catch (IOException e) {
-            System.out.println("Client disconnected: " + socket);
+            System.out.println("Client disconnected: " + socket + " caused by " + e.getMessage());
+        } finally {
+            System.out.println("Closing this connection.");
+            this.disconnect();
+            System.out.println("Connection closed");
         }
-
-        System.out.println("Closing this connection.");
-        this.disconnect();
-        System.out.println("Connection closed");
-
     }
 
     public void sendBack(String response) {
         try {
-
-            bw.write(response);
-            System.out.println("Response: " + response);
-            bw.flush();
-
+            byte[] msg = response.getBytes("UTF-8");
+            String msgLength = msg.length + "\n";
+            byte[] byteMsgLength = msgLength.getBytes("UTF-8");
+            os.write(byteMsgLength, 0, byteMsgLength.length);
+            os.flush();
+            System.out.println(byteMsgLength.length);
+            os.write(msg, 0, msg.length);
+            os.flush();
+            Thread.sleep(2000);
+            System.out.println(msg.length);
         } catch (IOException e) {
             System.out.println("Client disconnected: " + socket);
             e.printStackTrace();
             disconnect();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
     private void disconnect() {
         try {
+            os.close();
             br.close();
-            bw.close();
+            bos.close();
             socket.close();
 
         } catch (IOException e) {

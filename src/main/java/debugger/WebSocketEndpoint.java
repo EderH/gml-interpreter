@@ -55,7 +55,7 @@ public class WebSocketEndpoint {
         if (action == DebuggerUtils.DebugAction.BYE) {
             System.out.println("Client ended connection");
         } else {
-            debuggers.get(session).processClientCommand(action, data);
+           // debuggers.get(session).processClientCommand(action, data);
         }
     }
 
@@ -69,8 +69,13 @@ class DebuggerUtils {
     public enum DebugAction {NONE, FILE, STEP, CONTINUE, STEP_IN, STEP_OUT, SET_BP, VARS, STACK, END, BYE}
 
     public static DebugAction stringToAction(String str) {
+        int index = str.indexOf("|");
+        String cmd = "";
+        if (index >= 0) {
+            cmd = str.substring(0, index).trim();
+        }
         DebugAction action = DebugAction.NONE;
-        switch (str) {
+        switch (cmd) {
             case "step":
                 action = DebugAction.STEP;
                 break;
@@ -106,6 +111,10 @@ class DebuggerUtils {
         switch (action) {
             case STEP:
                 return "next\n";
+            case FILE:
+                return "file\n";
+            case SET_BP:
+                return "set_bp\n";
             case END:
                 return "end\n";
         }

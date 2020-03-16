@@ -30,7 +30,6 @@ public class Debugger {
     private Stack<Element> parentStack;
 
 
-
     public Debugger(ClientHandler clientHandler) {
         this.elementsStack = new Stack<>();
         this.parentStack = new Stack<>();
@@ -38,9 +37,14 @@ public class Debugger {
         this.breakpoints = new HashMap<>();
     }
 
-    public void processClientCommand(DebuggerUtils.DebugAction action, String data) {
+    public void processClientCommand(DebuggerUtils.DebugAction action, String dataInput) {
         DebuggerUtils.DebugAction responseToken = action;
-        String response = "";
+        StringBuilder response = new StringBuilder();
+        int index = dataInput.indexOf("|");
+        String data = "";
+        if (index >= 0) {
+            data = (index < dataInput.length() - 1 ? dataInput.substring(index + 1) : "").trim();
+        }
 
         if (action == DebuggerUtils.DebugAction.FILE) {
 
@@ -60,7 +64,7 @@ public class Debugger {
 
         } else if (action == DebuggerUtils.DebugAction.STEP_IN) {
 
-            if( currentElement instanceof Task && (!(((Task) currentElement).getSubTasks().isEmpty()))) {
+            if (currentElement instanceof Task && (!(((Task) currentElement).getSubTasks().isEmpty()))) {
                 steppingIn = true;
                 continueExc = false;
                 elementsStack.push(((Task) currentElement).getSubTasks());
@@ -71,7 +75,7 @@ public class Debugger {
         } else if (action == DebuggerUtils.DebugAction.STEP_OUT) {
 
             continueExc = false;
-            if(!parentStack.empty()) {
+            if (!parentStack.empty()) {
                 elementsStack.pop();
                 currentElement = parentStack.pop();
             }
@@ -79,11 +83,11 @@ public class Debugger {
 
         } else if (action == DebuggerUtils.DebugAction.STACK) {
 
-            response = getStack();
+            response.append(getStack());
 
         } else if (action == DebuggerUtils.DebugAction.VARS) {
 
-            response = getVariables();
+            response.append(getVariables());
 
         } else if (action == DebuggerUtils.DebugAction.STEP) {
             continueExc = false;
@@ -94,7 +98,7 @@ public class Debugger {
 
         if (action == DebuggerUtils.DebugAction.STEP) {
             responseToken = DebuggerUtils.DebugAction.STEP;
-            if ( elementsStack.isEmpty()) {
+            if (elementsStack.isEmpty()) {
                 responseToken = DebuggerUtils.DebugAction.END;
             } else {
                 //TODO: check if step in or not
@@ -104,15 +108,7 @@ public class Debugger {
                 }*/
 
                 execute();
-                response = currentElement.getId() + "\n";
-
-                String vars = getVariables();
-                int varsCount = vars.equals("") ? 0 : vars.split("\n").length;
-                    response += varsCount + "\n";
-                    response += vars;
-
-                String stack = getStack();
-                response += stack;
+                response.append(createResult());
 
                 if (elementsStack.size() == 0) {
                     responseToken = DebuggerUtils.DebugAction.END;
@@ -120,13 +116,8 @@ public class Debugger {
                     getNextElement(elementsStack.peek());
                 }
             }
-        }
 
-        if (action == DebuggerUtils.DebugAction.END) {
-            responseToken = DebuggerUtils.DebugAction.END;
         }
-
-        response = DebuggerUtils.responseToken(responseToken) + response;
 
         /*try {
             if(!response.equals("none")) {
@@ -138,21 +129,42 @@ public class Debugger {
         } catch (IOException ex) {
             ex.printStackTrace();
         }*/
+        ;
 
-        clientHandler.sendBack(response);
+        sendBack(responseToken,response.toString());
+    }
 
+    public String createResult() {
+        StringBuilder response = new StringBuilder();
+        response.append(currentElement.getId());
+        response.append("\n");
+        String vars = getVariables();
+        int varsCount = vars.equals("") ? 0 : vars.split("\n").length;
+        response.append(varsCount);
+        response.append("\n");
+        response.append(vars);
+        String stack = getStack();
+        response.append(stack);
+        //response.append("\n");
+        return response.toString();
+    }
+
+    public void sendBack(DebuggerUtils.DebugAction responseToken, String response) {
+        clientHandler.sendBack(DebuggerUtils.responseToken(responseToken) + response);
     }
 
     //TODO: Maybe change to StringBuilder
-    private String getStack(){
-        return currentElement.getId();
+    private String getStack() {
+        StringBuilder stack = new StringBuilder();
+        stack.append(currentElement.getId());
+        stack.append("\n");
+        return stack.toString();
     }
 
-    //TODO: Maybe change to StringBuilder
     private String getVariables() {
-        String vars = "";
+        StringBuilder vars = new StringBuilder();
         try {
-            if(currentElement instanceof Task) {
+            if (currentElement instanceof Task) {
                 Task task = (Task) currentElement;
                 Field[] fields = task.getClass().getDeclaredFields();
                 for (Field field : fields) {
@@ -163,21 +175,25 @@ public class Debugger {
                     String name = field.getName();
                     // TODO local or global value
                     String var = "" + name + ":" + "0" + ":" + type + ":" + value;
-                    vars += var + "\n";
+                    vars.append(var);
+                    vars.append("\n");
                 }
             }
         } catch (IllegalAccessException ex) {
             ex.printStackTrace();
         }
-        return vars;
+        return vars.toString();
     }
 
     private void setBreakpoints(String data) {
         System.out.println(data);
-        String[] parts = data.split("[|]+");
-        for (String s : parts) {
-            Breakpoint breakpoint = new Breakpoint(s);
-            breakpoints.put(s, breakpoint);
+        if(!data.isEmpty()) {
+            String[] parts = data.split("[|]+");
+            for (String s : parts) {
+                System.out.println("Breakpoint: " + s);
+                Breakpoint breakpoint = new Breakpoint(s);
+                breakpoints.put(s, breakpoint);
+            }
         }
     }
 
@@ -197,7 +213,7 @@ public class Debugger {
                 currentElement = elements.get(currentIndex);
             } else {
                 elementsStack.pop();
-                if(!parentStack.empty()) {
+                if (!parentStack.empty()) {
                     currentElement = parentStack.pop();
                 } else {
                     endOfFile = true;
@@ -210,24 +226,26 @@ public class Debugger {
     private boolean checkBreakpoint(Element element) {
         if (!breakpoints.isEmpty() && breakpoints.containsKey(element.getId())) {
             Breakpoint breakpoint = breakpoints.get(element.getId());
-            if (breakpoint.getHitCount() < 1) {
+            /*if (breakpoint.getHitCount() < 1) {
                 breakpoint.setHitCount(1);
                 return true;
-            }
+            }*/
+            return true;
         }
         return false;
     }
 
     private void execute() {
-        if(currentElement == null || endOfFile) {
+        if (currentElement == null || endOfFile) {
             return;
         }
-        if(checkBreakpoint(currentElement)) {
+        if (checkBreakpoint(currentElement)) {
+            previousElement = currentElement;
             return;
         }
 
         if (currentElement instanceof Task && (!(((Task) currentElement).getSubTasks().isEmpty()))) {
-            if(!steppingIn) {
+            if (!steppingIn) {
                 for (Element e : ((Task) currentElement).getSubTasks()) {
                     e.accept(new Interpreter());
                 }
@@ -237,10 +255,11 @@ public class Debugger {
         }
         previousElement = currentElement;
 
-        if (continueExc) {
+        /*if (continueExc) {
             getNextElement(elementsStack.peek());
+            sendBack(DebuggerUtils.DebugAction.STEP, createResult());
             execute();
-        }
+        }*/
     }
 
 }
