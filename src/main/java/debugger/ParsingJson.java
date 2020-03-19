@@ -8,46 +8,51 @@ import deserializer.GraphDeserializer;
 import deserializer.NodeDeserializer;
 import deserializer.TaskDeserializer;
 import gml.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 public class ParsingJson {
 
-    GsonBuilder gsonBuilder;
-    Gson gson;
+    private Gson gson;
+    private Path sourceDirectory;
 
-    public ParsingJson() {
-        gsonBuilder = new GsonBuilder();
+    public ParsingJson(Path path) {
+        this.sourceDirectory = path;
+        GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Graph.class, new GraphDeserializer());
-        gsonBuilder.registerTypeAdapter(Task.class, new TaskDeserializer());
+        gsonBuilder.registerTypeAdapter(Task.class, new TaskDeserializer(path));
         gsonBuilder.registerTypeAdapter(Node.class, new NodeDeserializer());
         gsonBuilder.registerTypeAdapter(Edge.class, new EdgeDeserializer());
         gson = gsonBuilder.create();
+
     }
 
-    public LinkedList<Element> parse(String sourceFile) {
-        LinkedList<Element> elements = new LinkedList<>();
+    public Graph deserializeFile(String sourceFile) {
+        Graph graph = null;
         try {
-            /*ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-            URL url = classloader.getResource(sourceFile);
-            if( url != null) {
-                Reader reader = new InputStreamReader( ParsingJson.class.getResourceAsStream("/" + sourceFile), "UTF-8");*/
             if(sourceFile != null) {
-                Path file = Paths.get(sourceFile);
+                Path file = Paths.get(sourceDirectory.toString(),sourceFile);
                 if(Files.exists(file)){
-                    FileReader reader = new FileReader(sourceFile);
-                    Graph graph = gson.fromJson(reader, Graph.class);
-                    elements = graph.transformGraphToList();
+                    FileReader reader = new FileReader(file.toString());
+                    graph = gson.fromJson(reader, Graph.class);
+                    graph.setPath(file);
                 }
             }
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         }
-        return elements;
+        return graph;
     }
+
+
+
 }

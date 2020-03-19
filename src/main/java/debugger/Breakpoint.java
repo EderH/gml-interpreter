@@ -16,4 +16,8 @@ public class Breakpoint {
         this.id = name;
         this.hitCount = 0;
     }
+
+    public void increaseHitCount() {
+        this.hitCount++;
+    }
 }

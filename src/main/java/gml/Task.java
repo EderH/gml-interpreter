@@ -18,7 +18,7 @@ public  class Task extends Element {
     private String taskType;
     @Setter
     @Getter
-    private LinkedList<Element> subTasks;
+    private Graph subGraph;
 
     public Task() {
     }

@@ -1,6 +1,7 @@
 package debugger;
 
 import gml.Element;
+import gml.Graph;
 import gml.Task;
 import interpret.Interpreter;
 import lombok.Getter;
@@ -10,6 +11,10 @@ import javax.websocket.CloseReason;
 import javax.websocket.Session;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class Debugger {
@@ -20,21 +25,24 @@ public class Debugger {
 
     private boolean continueExc;
     private boolean steppingIn;
+    private boolean steppingOut;
     private boolean endOfFile;
     private Element currentElement;
     private Element previousElement;
     private ParsingJson parsingJson;
     private ClientHandler clientHandler;
     private Map<String, Breakpoint> breakpoints;
-    private Stack<LinkedList<Element>> elementsStack;
-    private Stack<Element> parentStack;
+
+    private Graph mainGraph;
+    private Stack<ParsingGraph> parsingGraphs;
+    private Graph currentGraph;
 
 
     public Debugger(ClientHandler clientHandler) {
-        this.elementsStack = new Stack<>();
-        this.parentStack = new Stack<>();
+        // mainInstance = Debugger.getMainInstance() == null ? this : Debugger.getMainInstance();
         this.clientHandler = clientHandler;
         this.breakpoints = new HashMap<>();
+        this.parsingGraphs = new Stack<>();
     }
 
     public void processClientCommand(DebuggerUtils.DebugAction action, String dataInput) {
@@ -47,11 +55,15 @@ public class Debugger {
         }
 
         if (action == DebuggerUtils.DebugAction.FILE) {
-
-            parsingJson = new ParsingJson();
-            elementsStack.push(parsingJson.parse(data));
-            currentElement = elementsStack.peek().getFirst();
-
+            //mainInstance = this;
+            Path path = Paths.get(data);
+            if (path != null) {
+                parsingJson = new ParsingJson(path.getParent());
+                mainGraph = parsingJson.deserializeFile(path.getFileName().toString());
+                parsingGraphs.push(new ParsingGraph(mainGraph));
+            } else {
+                return;
+            }
         } else if (action == DebuggerUtils.DebugAction.SET_BP) {
 
             setBreakpoints(data);
@@ -63,22 +75,13 @@ public class Debugger {
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STEP_IN) {
-
-            if (currentElement instanceof Task && (!(((Task) currentElement).getSubTasks().isEmpty()))) {
-                steppingIn = true;
-                continueExc = false;
-                elementsStack.push(((Task) currentElement).getSubTasks());
-                parentStack.push(currentElement);
-            }
+            steppingIn = true;
+            continueExc = false;
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STEP_OUT) {
-
+            steppingOut = true;
             continueExc = false;
-            if (!parentStack.empty()) {
-                elementsStack.pop();
-                currentElement = parentStack.pop();
-            }
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STACK) {
@@ -98,54 +101,44 @@ public class Debugger {
 
         if (action == DebuggerUtils.DebugAction.STEP) {
             responseToken = DebuggerUtils.DebugAction.STEP;
-            if (elementsStack.isEmpty()) {
-                responseToken = DebuggerUtils.DebugAction.END;
-            } else {
-                //TODO: check if step in or not
-                /*if (debuggerStack.size() > 0) {
-                    //Debugger stepIn = debuggerStack.
-                    return;
-                }*/
 
-                execute();
-                response.append(createResult());
-
-                if (elementsStack.size() == 0) {
-                    responseToken = DebuggerUtils.DebugAction.END;
+            if (currentElement instanceof Task && (((Task) currentElement).getSubGraph() != null)) {
+                parsingGraphs.push(new ParsingGraph(((Task) currentElement).getSubGraph()));
+                steppingIn = true;
+            }
+            getNextElement();
+            steppingIn = false;
+            if (endOfFile) {
+                if (parsingGraphs.size() > 1) {
+                    parsingGraphs.pop();
+                    endOfFile = false;
                 } else {
-                    getNextElement(elementsStack.peek());
+                    responseToken = DebuggerUtils.DebugAction.END;
                 }
+
+            } else {
+
+                executeNextElement();
+                response.append(createResult());
             }
 
         }
-
-        /*try {
-            if(!response.equals("none")) {
-                session.getBasicRemote().sendText(response);
-            }
-            if(responseToken == DebuggerUtils.DebugAction.END) {
-                session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "End of file"));
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }*/
-        ;
-
-        sendBack(responseToken,response.toString());
+        sendBack(responseToken, response.toString());
     }
 
     public String createResult() {
         StringBuilder response = new StringBuilder();
         response.append(currentElement.getId());
         response.append("\n");
+
         String vars = getVariables();
         int varsCount = vars.equals("") ? 0 : vars.split("\n").length;
         response.append(varsCount);
         response.append("\n");
         response.append(vars);
+
         String stack = getStack();
         response.append(stack);
-        //response.append("\n");
         return response.toString();
     }
 
@@ -157,7 +150,6 @@ public class Debugger {
     private String getStack() {
         StringBuilder stack = new StringBuilder();
         stack.append(currentElement.getId());
-        stack.append("\n");
         return stack.toString();
     }
 
@@ -167,10 +159,14 @@ public class Debugger {
             if (currentElement instanceof Task) {
                 Task task = (Task) currentElement;
                 Field[] fields = task.getClass().getDeclaredFields();
+                //HashMap<String, Object> fieldsValues = getMemberFields(task);
                 for (Field field : fields) {
                     String type = field.getType().toString();
                     field.setAccessible(true);
-                    String value = field.get(task).toString();
+                    String value = "";
+                    if (field.get(task) != null) {
+                        value = field.get(task).toString();
+                    }
                     field.setAccessible(false);
                     String name = field.getName();
                     // TODO local or global value
@@ -185,9 +181,26 @@ public class Debugger {
         return vars.toString();
     }
 
+    private static HashMap<String, Object> getMemberFields(Object obj) throws IllegalAccessException {
+        HashMap<String, Object> fieldValues = new HashMap<String, Object>();
+        if (obj != null) {
+            Class<?> objClass = obj.getClass();
+
+            Field[] fields = objClass.getDeclaredFields();
+            for (Field field : fields) {
+                field.setAccessible(true);
+                fieldValues.put(field.getName(), field.get(obj));
+                if (!field.getType().isPrimitive() && !field.getType().getName().contains("java.lang")) {
+                    getMemberFields(field.get(obj));
+                }
+            }
+        }
+        return fieldValues;
+    }
+
     private void setBreakpoints(String data) {
         System.out.println(data);
-        if(!data.isEmpty()) {
+        if (!data.isEmpty()) {
             String[] parts = data.split("[|]+");
             for (String s : parts) {
                 System.out.println("Breakpoint: " + s);
@@ -203,63 +216,36 @@ public class Debugger {
     }
 
 
-    private void getNextElement(LinkedList<Element> elements) {
-        int currentIndex = 0;
-        if (previousElement == null) {
-            currentElement = elements.get(currentIndex);
-        } else {
-            currentIndex = elements.indexOf(previousElement) + 1;
-            if (currentIndex < elements.size()) {
-                currentElement = elements.get(currentIndex);
+    private void getNextElement() {
+        ParsingGraph parser = parsingGraphs.peek();
+        if (parser.parseNextElement() != null) {
+            if (checkBreakpoint(parser.getLinkedList().peek())) {
+                currentElement = parser.getLinkedList().peek();
             } else {
-                elementsStack.pop();
-                if (!parentStack.empty()) {
-                    currentElement = parentStack.pop();
-                } else {
-                    endOfFile = true;
-                    continueExc = false;
-                }
+                currentElement = parser.getLinkedList().poll();
             }
+
+        } else {
+            endOfFile = true;
         }
     }
 
     private boolean checkBreakpoint(Element element) {
         if (!breakpoints.isEmpty() && breakpoints.containsKey(element.getId())) {
             Breakpoint breakpoint = breakpoints.get(element.getId());
-            /*if (breakpoint.getHitCount() < 1) {
-                breakpoint.setHitCount(1);
+            if (breakpoint.getHitCount() == 0) {
+                breakpoint.increaseHitCount();
                 return true;
-            }*/
-            return true;
+            }
         }
         return false;
     }
 
-    private void execute() {
-        if (currentElement == null || endOfFile) {
-            return;
-        }
+    private void executeNextElement() {
         if (checkBreakpoint(currentElement)) {
-            previousElement = currentElement;
             return;
         }
-
-        if (currentElement instanceof Task && (!(((Task) currentElement).getSubTasks().isEmpty()))) {
-            if (!steppingIn) {
-                for (Element e : ((Task) currentElement).getSubTasks()) {
-                    e.accept(new Interpreter());
-                }
-            }
-        } else {
-            currentElement.accept(new Interpreter());
-        }
-        previousElement = currentElement;
-
-        /*if (continueExc) {
-            getNextElement(elementsStack.peek());
-            sendBack(DebuggerUtils.DebugAction.STEP, createResult());
-            execute();
-        }*/
+        currentElement.accept(new Interpreter());
     }
 
 }
