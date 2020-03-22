@@ -55,15 +55,20 @@ public class Debugger {
         }
 
         if (action == DebuggerUtils.DebugAction.FILE) {
-            //mainInstance = this;
             Path path = Paths.get(data);
-            if (path != null) {
-                parsingJson = new ParsingJson(path.getParent());
-                mainGraph = parsingJson.deserializeFile(path.getFileName().toString());
-                parsingGraphs.push(new ParsingGraph(mainGraph));
-            } else {
+            if (path == null) {
+                processException(new ParsingException("Path to file not available"));
                 return;
             }
+            parsingJson = new ParsingJson(path.getParent(), this);
+            try {
+                mainGraph = parsingJson.deserializeFile(path.getFileName().toString());
+            } catch (ParsingException exc) {
+                processException(exc);
+                return;
+            }
+            parsingGraphs.push(new ParsingGraph(mainGraph));
+
         } else if (action == DebuggerUtils.DebugAction.SET_BP) {
 
             setBreakpoints(data);
@@ -104,10 +109,18 @@ public class Debugger {
 
             if (currentElement instanceof Task && (((Task) currentElement).getSubGraph() != null)) {
                 parsingGraphs.push(new ParsingGraph(((Task) currentElement).getSubGraph()));
-                steppingIn = true;
+                if (!steppingIn) {
+                    executeBlock();
+                }
             }
-            getNextElement();
-            steppingIn = false;
+            if (steppingOut && parsingGraphs.size() > 1) {
+                parsingGraphs.pop();
+            }
+            try {
+                getNextElement();
+            } catch (ParsingException exc) {
+                processException(exc);
+            }
             if (endOfFile) {
                 if (parsingGraphs.size() > 1) {
                     parsingGraphs.pop();
@@ -124,6 +137,24 @@ public class Debugger {
 
         }
         sendBack(responseToken, response.toString());
+    }
+
+    public void executeBlock() {
+
+        while (true) {
+            try {
+                getNextElement();
+            } catch (ParsingException exc) {
+                processException(exc);
+            }
+            if (endOfFile) {
+                parsingGraphs.pop();
+                endOfFile = false;
+                break;
+            }
+            executeNextElement();
+        }
+
     }
 
     public String createResult() {
@@ -149,6 +180,8 @@ public class Debugger {
     //TODO: Maybe change to StringBuilder
     private String getStack() {
         StringBuilder stack = new StringBuilder();
+        stack.append(parsingGraphs.peek().getGraph().getPath());
+        stack.append("\n");
         stack.append(currentElement.getId());
         return stack.toString();
     }
@@ -179,6 +212,22 @@ public class Debugger {
             ex.printStackTrace();
         }
         return vars.toString();
+    }
+
+    public void processException(ParsingException exc) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("exc\n");
+        sb.append(exc.getMessage());
+        sb.append("\n");
+        String vars = getVariables();
+        int varsCount = vars.equals("") ? 0 : vars.split("\n").length;
+        sb.append(varsCount);
+        sb.append("\n");
+        sb.append(vars);
+
+        String stack = getStack();
+        sb.append(stack);
+        clientHandler.sendBack(sb.toString());
     }
 
     private static HashMap<String, Object> getMemberFields(Object obj) throws IllegalAccessException {
@@ -216,18 +265,15 @@ public class Debugger {
     }
 
 
-    private void getNextElement() {
+    private void getNextElement() throws ParsingException {
         ParsingGraph parser = parsingGraphs.peek();
-        if (parser.parseNextElement() != null) {
-            if (checkBreakpoint(parser.getLinkedList().peek())) {
-                currentElement = parser.getLinkedList().peek();
-            } else {
-                currentElement = parser.getLinkedList().poll();
-            }
-
+        Element element = parser.parseNextElement();
+        if (element != null) {
+            currentElement = element;
         } else {
             endOfFile = true;
         }
+
     }
 
     private boolean checkBreakpoint(Element element) {

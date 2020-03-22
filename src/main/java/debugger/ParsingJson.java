@@ -25,18 +25,18 @@ public class ParsingJson {
     private Gson gson;
     private Path sourceDirectory;
 
-    public ParsingJson(Path path) {
+    public ParsingJson(Path path, Debugger debugger) {
         this.sourceDirectory = path;
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Graph.class, new GraphDeserializer());
-        gsonBuilder.registerTypeAdapter(Task.class, new TaskDeserializer(path));
+        gsonBuilder.registerTypeAdapter(Task.class, new TaskDeserializer(path, debugger));
         gsonBuilder.registerTypeAdapter(Node.class, new NodeDeserializer());
         gsonBuilder.registerTypeAdapter(Edge.class, new EdgeDeserializer());
         gson = gsonBuilder.create();
 
     }
 
-    public Graph deserializeFile(String sourceFile) {
+    public Graph deserializeFile(String sourceFile) throws ParsingException {
         Graph graph = null;
         try {
             if(sourceFile != null) {
@@ -49,6 +49,7 @@ public class ParsingJson {
             }
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
+            throw new ParsingException("Could not find file " + sourceFile);
         }
         return graph;
     }

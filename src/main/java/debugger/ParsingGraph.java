@@ -12,44 +12,48 @@ public class ParsingGraph {
 
     @Setter
     @Getter
-    private LinkedList<Element> linkedList = new LinkedList<>();
+    private LinkedList<Element> linkedList;
     private Edge currentEdge;
     private Element currentElement;
+    @Setter
+    @Getter
     private Graph graph;
 
     public ParsingGraph(Graph graph) {
         this.graph = graph;
+        this.linkedList = new LinkedList<>();
     }
 
-    public Element parseNextElement() {
-        if(graph.getTaskList().size() > 0) {
-            if(currentElement == null) {
-                currentElement = graph.getTaskList().get(0);
-                linkedList.add(graph.getTaskList().get(0));
-            } else {
-                if(currentElement instanceof Task || currentElement instanceof Node) {
-                    List<Edge> sourceList = findEdgeWithSource(currentElement, graph);
-                    if (sourceList.size() > 1) {
-                        currentEdge = processWeightedEdge(sourceList);
-                    } else if (sourceList.size() == 1) {
-                        currentEdge = sourceList.get(0);
-                    } else {
-                        return null;
-                    }
-                    linkedList.add(currentEdge);
+    public Element parseNextElement() throws ParsingException {
+        if (graph.getTaskList().isEmpty()) {
+            throw new ParsingException("There is no Task Element in Diagram");
+        }
+        if (currentElement == null) {
+            currentElement = graph.getTaskList().get(0);
+        } else {
+            if (!(currentElement instanceof Edge)) {
+                currentEdge = findEdgeWithSource(currentElement, graph);
+                if (currentEdge != null) {
                     currentElement = currentEdge;
                 } else {
-                    currentElement = findElementWithTarget(currentEdge, graph);
-                    linkedList.add(currentElement);
+                    return null;
+                }
+            } else {
+                Element element;
+                if( (element = findElementWithTarget(currentEdge, graph)) != null) {
+                    currentElement = element;
+                } else {
+                    throw new ParsingException("No source element found for edge " + currentEdge.getId());
                 }
             }
-        } else {
-            // TODO: throw error when no Task in diagram
+        }
+        if(currentElement instanceof Task) {
+            linkedList.add(currentElement);
         }
         return currentElement;
     }
 
-    private List<Edge> findEdgeWithSource(Element source, Graph graph) {
+    private Edge findEdgeWithSource(Element source, Graph graph) {
         List<Edge> sourceList = new ArrayList<>();
         for (int i = 0; i < graph.getEdgeList().size(); i++) {
             Edge edge = graph.getEdgeList().get(i);
@@ -57,7 +61,13 @@ public class ParsingGraph {
                 sourceList.add(edge);
             }
         }
-        return sourceList;
+        if (sourceList.size() > 1) {
+            return processWeightedEdge(sourceList);
+        } else if (sourceList.size() == 1) {
+            return sourceList.get(0);
+        } else {
+            return null;
+        }
     }
 
     private Element findElementWithTarget(Edge target, Graph graph) {
@@ -72,16 +82,16 @@ public class ParsingGraph {
 
     private Edge processWeightedEdge(List<Edge> sourceList) {
         double random = Math.random();
-        WeightedEdge firstEdge = (WeightedEdge)sourceList.get(0);
-        WeightedEdge secondEdge = (WeightedEdge)sourceList.get(1);
-        if(firstEdge.getProbability() > secondEdge.getProbability()) {
+        WeightedEdge firstEdge = (WeightedEdge) sourceList.get(0);
+        WeightedEdge secondEdge = (WeightedEdge) sourceList.get(1);
+        if (firstEdge.getProbability() > secondEdge.getProbability()) {
             WeightedEdge temp = firstEdge;
             firstEdge = secondEdge;
             secondEdge = temp;
         }
-        if(random < firstEdge.getProbability()) {
+        if (random < firstEdge.getProbability()) {
             return firstEdge;
-        } else if( random < secondEdge.getProbability()) {
+        } else if (random < secondEdge.getProbability()) {
             return secondEdge;
         } else {
             return firstEdge;
