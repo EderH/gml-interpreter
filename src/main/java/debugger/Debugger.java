@@ -180,7 +180,8 @@ public class Debugger {
     //TODO: Maybe change to StringBuilder
     private String getStack() {
         StringBuilder stack = new StringBuilder();
-        stack.append(parsingGraphs.peek().getGraph().getPath());
+        String filename = parsingGraphs.peek().getGraph().getPath().toAbsolutePath().toString();
+        stack.append(filename);
         stack.append("\n");
         stack.append(currentElement.getId());
         return stack.toString();
