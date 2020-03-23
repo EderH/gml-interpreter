@@ -31,7 +31,7 @@ public class Debugger {
     private Element previousElement;
     private ParsingJson parsingJson;
     private ClientHandler clientHandler;
-    private Map<String, Breakpoint> breakpoints;
+    private Map<String, HashMap<String, Breakpoint>> breakpoints;
 
     private Graph mainGraph;
     private Stack<ParsingGraph> parsingGraphs;
@@ -72,6 +72,14 @@ public class Debugger {
         } else if (action == DebuggerUtils.DebugAction.SET_BP) {
 
             setBreakpoints(data);
+            for(String k : breakpoints.keySet()) {
+                Map<String, Breakpoint> m1 = breakpoints.get(k);
+                System.out.println("File: " + k);
+                for(String k1 : m1.keySet()) {
+                    System.out.println("breakpoint: " + m1.get(k1).getId());
+                }
+            }
+
             return;
 
         } else if (action == DebuggerUtils.DebugAction.CONTINUE) {
@@ -125,6 +133,13 @@ public class Debugger {
                 if (parsingGraphs.size() > 1) {
                     parsingGraphs.pop();
                     endOfFile = false;
+                    try {
+                        getNextElement();
+                        executeNextElement();
+                        response.append(createResult());
+                    } catch (ParsingException exc) {
+                        processException(exc);
+                    }
                 } else {
                     responseToken = DebuggerUtils.DebugAction.END;
                 }
@@ -159,6 +174,9 @@ public class Debugger {
 
     public String createResult() {
         StringBuilder response = new StringBuilder();
+        String filename = getFullPathOfCurrentGraph().toString();
+        response.append(filename);
+        response.append("\n");
         response.append(currentElement.getId());
         response.append("\n");
 
@@ -180,7 +198,7 @@ public class Debugger {
     //TODO: Maybe change to StringBuilder
     private String getStack() {
         StringBuilder stack = new StringBuilder();
-        String filename = parsingGraphs.peek().getGraph().getPath().toAbsolutePath().toString();
+        String filename = getFullPathOfCurrentGraph().getFileName().toString();
         stack.append(filename);
         stack.append("\n");
         stack.append(currentElement.getId());
@@ -252,11 +270,13 @@ public class Debugger {
         System.out.println(data);
         if (!data.isEmpty()) {
             String[] parts = data.split("[|]+");
-            for (String s : parts) {
-                System.out.println("Breakpoint: " + s);
-                Breakpoint breakpoint = new Breakpoint(s);
-                breakpoints.put(s, breakpoint);
+            String file = parts[0];
+            HashMap<String, Breakpoint> bpMap = new HashMap<>();
+            for (int i = 1; i < parts.length; i++) {
+                System.out.println("Breakpoint: " + parts[i]);
+                bpMap.put(parts[i], new Breakpoint(parts[i]));
             }
+            breakpoints.put(file, bpMap);
         }
     }
 
@@ -278,14 +298,19 @@ public class Debugger {
     }
 
     private boolean checkBreakpoint(Element element) {
-        if (!breakpoints.isEmpty() && breakpoints.containsKey(element.getId())) {
-            Breakpoint breakpoint = breakpoints.get(element.getId());
+        String filename = getFullPathOfCurrentGraph().getFileName().toString();
+        if (!breakpoints.isEmpty() && breakpoints.containsKey(filename) && breakpoints.get(filename).containsKey(element.getId())) {
+            Breakpoint breakpoint = breakpoints.get(filename).get(element.getId());
             if (breakpoint.getHitCount() == 0) {
                 breakpoint.increaseHitCount();
                 return true;
             }
         }
         return false;
+    }
+
+    private Path getFullPathOfCurrentGraph() {
+        return parsingGraphs.peek().getGraph().getPath();
     }
 
     private void executeNextElement() {
