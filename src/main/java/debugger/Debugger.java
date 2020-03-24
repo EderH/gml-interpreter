@@ -72,13 +72,13 @@ public class Debugger {
         } else if (action == DebuggerUtils.DebugAction.SET_BP) {
 
             setBreakpoints(data);
-            for(String k : breakpoints.keySet()) {
+            /*for(String k : breakpoints.keySet()) {
                 Map<String, Breakpoint> m1 = breakpoints.get(k);
                 System.out.println("File: " + k);
                 for(String k1 : m1.keySet()) {
                     System.out.println("breakpoint: " + m1.get(k1).getId());
                 }
-            }
+            } */
 
             return;
 
@@ -118,7 +118,9 @@ public class Debugger {
             if (currentElement instanceof Task && (((Task) currentElement).getSubGraph() != null)) {
                 parsingGraphs.push(new ParsingGraph(((Task) currentElement).getSubGraph()));
                 if (!steppingIn) {
-                    executeBlock();
+                    if(!executeBlock()) {
+                        return;
+                    }
                 }
             }
             if (steppingOut && parsingGraphs.size() > 1) {
@@ -154,7 +156,7 @@ public class Debugger {
         sendBack(responseToken, response.toString());
     }
 
-    public void executeBlock() {
+    public boolean executeBlock() {
 
         while (true) {
             try {
@@ -165,9 +167,12 @@ public class Debugger {
             if (endOfFile) {
                 parsingGraphs.pop();
                 endOfFile = false;
-                break;
+                return true;
             }
-            executeNextElement();
+            if(!executeNextElement()){
+                sendBack(DebuggerUtils.DebugAction.STEP, createResult());
+                return false;
+            }
         }
 
     }
@@ -267,16 +272,16 @@ public class Debugger {
     }
 
     private void setBreakpoints(String data) {
-        System.out.println(data);
         if (!data.isEmpty()) {
             String[] parts = data.split("[|]+");
             String file = parts[0];
             HashMap<String, Breakpoint> bpMap = new HashMap<>();
             for (int i = 1; i < parts.length; i++) {
-                System.out.println("Breakpoint: " + parts[i]);
                 bpMap.put(parts[i], new Breakpoint(parts[i]));
             }
             breakpoints.put(file, bpMap);
+        } else {
+            breakpoints.clear();
         }
     }
 
@@ -313,11 +318,11 @@ public class Debugger {
         return parsingGraphs.peek().getGraph().getPath();
     }
 
-    private void executeNextElement() {
+    private boolean executeNextElement() {
         if (checkBreakpoint(currentElement)) {
-            return;
+            return false;
         }
         currentElement.accept(new Interpreter());
+        return true;
     }
-
 }
