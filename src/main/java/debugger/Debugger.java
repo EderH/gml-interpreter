@@ -118,7 +118,7 @@ public class Debugger {
             if (currentElement instanceof Task && (((Task) currentElement).getSubGraph() != null)) {
                 parsingGraphs.push(new ParsingGraph(((Task) currentElement).getSubGraph()));
                 if (!steppingIn) {
-                    if(!executeBlock()) {
+                    if (!executeBlock()) {
                         return;
                     }
                 }
@@ -130,6 +130,7 @@ public class Debugger {
                 getNextElement();
             } catch (ParsingException exc) {
                 processException(exc);
+                return;
             }
             if (endOfFile) {
                 if (parsingGraphs.size() > 1) {
@@ -141,6 +142,7 @@ public class Debugger {
                         response.append(createResult());
                     } catch (ParsingException exc) {
                         processException(exc);
+                        return;
                     }
                 } else {
                     responseToken = DebuggerUtils.DebugAction.END;
@@ -169,7 +171,7 @@ public class Debugger {
                 endOfFile = false;
                 return true;
             }
-            if(!executeNextElement()){
+            if (!executeNextElement()) {
                 sendBack(DebuggerUtils.DebugAction.STEP, createResult());
                 return false;
             }
@@ -203,10 +205,17 @@ public class Debugger {
     //TODO: Maybe change to StringBuilder
     private String getStack() {
         StringBuilder stack = new StringBuilder();
-        String filename = getFullPathOfCurrentGraph().getFileName().toString();
-        stack.append(filename);
-        stack.append("\n");
-        stack.append(currentElement.getId());
+        ListIterator iterator = parsingGraphs.listIterator(parsingGraphs.size());
+
+        while (iterator.hasPrevious()){
+            ParsingGraph previous = (ParsingGraph)iterator.previous();
+            String filename = previous.getGraph().getPath().getFileName().toString();
+            stack.append(filename);
+            stack.append("\n");
+            stack.append(previous.getCurrentElement().getId());
+            stack.append("\n");
+        }
+
         return stack.toString();
     }
 

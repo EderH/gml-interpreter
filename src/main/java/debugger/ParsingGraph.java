@@ -7,6 +7,7 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 public class ParsingGraph {
 
@@ -14,6 +15,8 @@ public class ParsingGraph {
     @Getter
     private LinkedList<Element> linkedList;
     private Edge currentEdge;
+    @Getter
+    @Setter
     private Element currentElement;
     @Setter
     @Getter
@@ -40,20 +43,20 @@ public class ParsingGraph {
                 }
             } else {
                 Element element;
-                if( (element = findElementWithTarget(currentEdge, graph)) != null) {
+                if ((element = findElementWithTarget(currentEdge, graph)) != null) {
                     currentElement = element;
                 } else {
                     throw new ParsingException("No source element found for edge " + currentEdge.getId());
                 }
             }
         }
-        if(currentElement instanceof Task) {
+        if (currentElement instanceof Task) {
             linkedList.add(currentElement);
         }
         return currentElement;
     }
 
-    private Edge findEdgeWithSource(Element source, Graph graph) {
+    private Edge findEdgeWithSource(Element source, Graph graph) throws ParsingException {
         List<Edge> sourceList = new ArrayList<>();
         for (int i = 0; i < graph.getEdgeList().size(); i++) {
             Edge edge = graph.getEdgeList().get(i);
@@ -80,21 +83,53 @@ public class ParsingGraph {
         return null;
     }
 
-    private Edge processWeightedEdge(List<Edge> sourceList) {
-        double random = Math.random();
-        WeightedEdge firstEdge = (WeightedEdge) sourceList.get(0);
-        WeightedEdge secondEdge = (WeightedEdge) sourceList.get(1);
-        if (firstEdge.getProbability() > secondEdge.getProbability()) {
-            WeightedEdge temp = firstEdge;
-            firstEdge = secondEdge;
-            secondEdge = temp;
+    private Edge processWeightedEdge(List<Edge> sourceList) throws ParsingException {
+        if (currentElement instanceof Task || (currentElement instanceof Node && ((Node) currentElement).getNodeType().equals("mergeNode"))) {
+            throw new ParsingException("Point of diversion is not allowed at element: " + currentElement.getId() + "! Use decision node instead!");
         }
-        if (random < firstEdge.getProbability()) {
-            return firstEdge;
-        } else if (random < secondEdge.getProbability()) {
-            return secondEdge;
-        } else {
-            return firstEdge;
+
+        WeightedRandomBag<WeightedEdge> bag = new WeightedRandomBag<WeightedEdge>();
+        for (Edge edge: sourceList) {
+            if(edge instanceof WeightedEdge) {
+                WeightedEdge weightedEdge = (WeightedEdge) edge;
+                bag.addEntry(weightedEdge, weightedEdge.getProbability());
+            } else {
+                throw new ParsingException("Decision node " + currentElement.getId() + " requires weighted edge!");
+            }
         }
+        return bag.getRandom();
+    }
+}
+
+
+
+class WeightedRandomBag<T extends Object> {
+
+    private class Entry {
+        double accumulatedWeight;
+        T object;
+    }
+
+    private List<Entry> entries = new ArrayList<>();
+    private double accumulatedWeight;
+    private Random rand = new Random();
+
+    public void addEntry(T object, double weight) {
+        accumulatedWeight += weight;
+        Entry e = new Entry();
+        e.object = object;
+        e.accumulatedWeight = accumulatedWeight;
+        entries.add(e);
+    }
+
+    public T getRandom() {
+        double r = rand.nextDouble() * accumulatedWeight;
+
+        for (Entry entry: entries) {
+            if (entry.accumulatedWeight >= r) {
+                return entry.object;
+            }
+        }
+        return null;
     }
 }
