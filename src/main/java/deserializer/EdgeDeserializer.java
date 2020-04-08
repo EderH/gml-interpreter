@@ -15,7 +15,8 @@ public class EdgeDeserializer implements JsonDeserializer<Edge> {
         String edgeType = jsonObject.get("type").getAsString();
         if(edgeType.endsWith("weighted")) {
             edge = new WeightedEdge();
-            ((WeightedEdge) edge).setProbability(Math.random());
+            double randomNumber = (double)Math.round(Math.random()*100)/100;
+            ((WeightedEdge) edge).setProbability(randomNumber);
         } else {
             edge = new Edge();
         }

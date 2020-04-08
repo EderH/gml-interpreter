@@ -222,16 +222,21 @@ public class Debugger {
     private String getVariables() {
         StringBuilder vars = new StringBuilder();
         try {
-            if (currentElement instanceof Task) {
-                Task task = (Task) currentElement;
-                Field[] fields = task.getClass().getDeclaredFields();
+
+                List<Field> fields = ReflectionUtil.getInheritedDeclaredFields(currentElement.getClass(), Object.class);
                 //HashMap<String, Object> fieldsValues = getMemberFields(task);
                 for (Field field : fields) {
                     String type = field.getType().toString();
                     field.setAccessible(true);
                     String value = "";
-                    if (field.get(task) != null) {
-                        value = field.get(task).toString();
+                    if (field.get(currentElement) != null) {
+                        if(field.getType() == Graph.class) {
+                            value = ReflectionUtil.getInheritedDeclaredFieldValue(field.get(currentElement), "id", Object.class).toString() + ".wf";;
+                        } else {
+                            value = field.get(currentElement).toString();
+                        }
+                    } else {
+                        value = "null";
                     }
                     field.setAccessible(false);
                     String name = field.getName();
@@ -239,9 +244,8 @@ public class Debugger {
                     String var = "" + name + ":" + "0" + ":" + type + ":" + value;
                     vars.append(var);
                     vars.append("\n");
-                }
             }
-        } catch (IllegalAccessException ex) {
+        } catch (IllegalAccessException | NoSuchFieldException   ex) {
             ex.printStackTrace();
         }
         return vars.toString();
