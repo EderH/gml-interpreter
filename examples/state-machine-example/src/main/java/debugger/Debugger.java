@@ -28,6 +28,7 @@ public class Debugger implements IDebugger {
     private GElement currentElement;
     private GElement previousGElement;
     private ParsingJson parsingJson;
+    @Getter
     private ClientHandler clientHandler;
     private Map<String, HashMap<String, Breakpoint>> breakpoints;
     private Stack<ParsingGraph> parsingGraphs;
@@ -58,7 +59,7 @@ public class Debugger implements IDebugger {
             parsingJson = new ParsingJson(path.getParent(), this);
             try {
                 StateMachine stateMachine = parsingJson.deserializeFile(path.getFileName().toString());
-                parsingGraphs.push(new ParsingGraph(stateMachine));
+                parsingGraphs.push(new ParsingGraph(stateMachine, this));
             } catch (ParsingException exc) {
                 processException(exc);
                 return;
@@ -112,7 +113,7 @@ public class Debugger implements IDebugger {
             responseToken = DebuggerUtils.DebugAction.STEP;
 
             if (currentElement instanceof StateNode && (((StateNode) currentElement).getSubStateMachine() != null)) {
-                parsingGraphs.push(new ParsingGraph(((StateNode) currentElement).getSubStateMachine()));
+                parsingGraphs.push(new ParsingGraph(((StateNode) currentElement).getSubStateMachine(),this));
                 if (!steppingIn) {
                     if (!executeBlock()) {
                         return;

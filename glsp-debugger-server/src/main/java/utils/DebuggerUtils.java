@@ -1,7 +1,7 @@
 package utils;
 
 public class DebuggerUtils {
-    public enum DebugAction {NONE, FILE, STEP, CONTINUE, STEP_IN, STEP_OUT, SET_BP, VARS, STACK, END, BYE}
+    public enum DebugAction {NONE, FILE, STEP, CONTINUE, STEP_IN, STEP_OUT, SET_BP, VARS, STACK, END, BYE, TRIGGER}
 
     public static DebuggerUtils.DebugAction stringToAction(String str) {
         int index = str.indexOf("|");
@@ -52,6 +52,8 @@ public class DebuggerUtils {
                 return "set_bp\n";
             case END:
                 return "end\n";
+            case TRIGGER:
+                return "trigger\n";
         }
 
         return "none\n";
