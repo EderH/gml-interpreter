@@ -27,8 +27,13 @@ public class TransitionDeserializer implements JsonDeserializer<Transition> {
         transition.setId(jsonObject.get("id").getAsString());
         transition.setSourceID(jsonObject.get("sourceId").getAsString());
         transition.setTargetID(jsonObject.get("targetId").getAsString());
-        transition.setTrigger(jsonObject.get("trigger").getAsString());
-        transition.setEffect(jsonObject.get("effect").getAsString());
+        String trigger = jsonObject.get("trigger").getAsString();
+        if(trigger.isEmpty()) {
+            transition.setEvent("default");
+        } else {
+            transition.setEvent(trigger);
+        }
+        transition.setAction(jsonObject.get("effect").getAsString());
 
         return transition;
     }

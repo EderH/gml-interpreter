@@ -42,7 +42,16 @@ public class StateNodeDeserializer implements JsonDeserializer<StateNode> {
                         if (headerChild.has("id")) {
                             String headerChildID = headerChild.get("id").getAsString();
                             if (headerChildID.equals(state.getId() + "_classname")) {
-                                state.setLabel(headerChild.get("text").getAsString());
+                                String text = headerChild.get("text").getAsString();
+                                if(text.isEmpty()) {
+                                    if(state.getStateTyp().equals("initialState")) {
+                                        state.setLabel("Initial");
+                                    } else{
+                                        state.setLabel("Final");
+                                    }
+                                } else {
+                                    state.setLabel(text);
+                                }
                             }
                         }
                     }

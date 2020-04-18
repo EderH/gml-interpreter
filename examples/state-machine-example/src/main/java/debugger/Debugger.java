@@ -1,10 +1,12 @@
 package debugger;
 
 import gml.GElement;
+import jdk.jfr.Event;
 import lombok.Getter;
 import lombok.Setter;
 import parser.ParsingGraph;
 import parser.ParsingJson;
+import statemachine.EventFlowEntry;
 import statemachine.StateMachine;
 import statemachine.StateNode;
 import utils.DebuggerUtils;
@@ -28,6 +30,7 @@ public class Debugger implements IDebugger {
     private GElement currentElement;
     private GElement previousGElement;
     private ParsingJson parsingJson;
+
     @Getter
     private ClientHandler clientHandler;
     private Map<String, HashMap<String, Breakpoint>> breakpoints;
@@ -39,6 +42,7 @@ public class Debugger implements IDebugger {
         this.clientHandler = clientHandler;
         this.breakpoints = new HashMap<>();
         this.parsingGraphs = new Stack<>();
+
     }
 
     public void processClientCommand(DebuggerUtils.DebugAction action, String dataInput) {
@@ -101,6 +105,10 @@ public class Debugger implements IDebugger {
         } else if (action == DebuggerUtils.DebugAction.VARS) {
 
             response.append(getVariables());
+
+        } else if (action == DebuggerUtils.DebugAction.EVENT_FLOW ) {
+
+            response.append(getEventFlow());
 
         } else if (action == DebuggerUtils.DebugAction.STEP) {
             continueExc = false;
@@ -191,15 +199,25 @@ public class Debugger implements IDebugger {
         response.append(vars);
 
         String stack = getStack();
+        int stackCount = stack.equals("") ? 0 : stack.split("\n").length;
+        response.append(stackCount);
+        response.append("\n");
         response.append(stack);
+
+        String eventFlow = getEventFlow();
+        int eventFlowCount = eventFlow.equals("") ? 0 : eventFlow.split("\n").length;
+        response.append(eventFlowCount);
+        response.append("\n");
+        response.append(eventFlow);
+
         return response.toString();
+
     }
 
     public void sendBack(DebuggerUtils.DebugAction responseToken, String response) {
         clientHandler.sendBack(DebuggerUtils.responseToken(responseToken) + response);
     }
 
-    //TODO: Maybe change to StringBuilder
     private String getStack() {
         StringBuilder stack = new StringBuilder();
         ListIterator iterator = parsingGraphs.listIterator(parsingGraphs.size());
@@ -207,9 +225,8 @@ public class Debugger implements IDebugger {
         while (iterator.hasPrevious()){
             ParsingGraph previous = (ParsingGraph)iterator.previous();
             String filename = previous.getStateMachine().getPath().getFileName().toString();
-            stack.append(filename);
-            stack.append("\n");
-            stack.append(previous.getCurrentElement().getId());
+            String frame = "" + filename + ":" + previous.getCurrentElement().getId();
+            stack.append(frame);
             stack.append("\n");
         }
 
@@ -246,6 +263,20 @@ public class Debugger implements IDebugger {
         return vars.toString();
     }
 
+    private String getEventFlow() {
+        StringBuilder events = new StringBuilder();
+
+        ListIterator iterator = parsingGraphs.peek().getEventFlow().listIterator(parsingGraphs.peek().getEventFlow().size());
+        while (iterator.hasPrevious()){
+            EventFlowEntry previous = (EventFlowEntry) iterator.previous();
+            String event = "" + previous.getElement() + ":" + previous.getEvent();
+            events.append(event);
+            events.append("\n");
+        }
+
+        return events.toString();
+    }
+
     public void processException(ParsingException exc) {
         StringBuilder sb = new StringBuilder();
         sb.append("exc\n");
@@ -278,9 +309,10 @@ public class Debugger implements IDebugger {
 
     private void getNextElement() throws ParsingException {
         ParsingGraph parser = parsingGraphs.peek();
-        GElement GElement = parser.parseNextElement();
-        if (GElement != null) {
-            currentElement = GElement;
+        GElement element = parser.parseNextElement();
+
+        if (element != null) {
+            currentElement = element;
         } else {
             endOfFile = true;
         }

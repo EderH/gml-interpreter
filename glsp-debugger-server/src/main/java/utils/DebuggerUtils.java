@@ -1,7 +1,7 @@
 package utils;
 
 public class DebuggerUtils {
-    public enum DebugAction {NONE, FILE, STEP, CONTINUE, STEP_IN, STEP_OUT, SET_BP, VARS, STACK, END, BYE, TRIGGER}
+    public enum DebugAction {NONE, FILE, STEP, CONTINUE, STEP_IN, STEP_OUT, SET_BP, VARS, STACK, END, BYE, EVENT, EVENT_FLOW}
 
     public static DebuggerUtils.DebugAction stringToAction(String str) {
         int index = str.indexOf("|");
@@ -35,6 +35,9 @@ public class DebuggerUtils {
             case "stack":
                 action = DebuggerUtils.DebugAction.STACK;
                 break;
+            case "eventFlow":
+                action = DebuggerUtils.DebugAction.EVENT_FLOW;
+                break;
             case "bye":
                 action = DebuggerUtils.DebugAction.BYE;
                 break;
@@ -52,8 +55,8 @@ public class DebuggerUtils {
                 return "set_bp\n";
             case END:
                 return "end\n";
-            case TRIGGER:
-                return "trigger\n";
+            case EVENT:
+                return "event\n";
         }
 
         return "none\n";

@@ -9,10 +9,10 @@ public class Transition extends GEdge<IElementVisitorStateMachine> {
 
     @Setter
     @Getter
-    String trigger;
+    String event;
     @Setter
     @Getter
-    String effect;
+    String action;
 
     @Override
     public void accept(IElementVisitorStateMachine elementVisitor) {
