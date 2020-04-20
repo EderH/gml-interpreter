@@ -7,6 +7,8 @@ import debugger.ParsingException;
 import deserializer.StateMachineDeserializer;
 import deserializer.StateNodeDeserializer;
 import deserializer.TransitionDeserializer;
+import gml.GGraph;
+import gml.GNode;
 import statemachine.StateMachine;
 import statemachine.StateNode;
 import statemachine.Transition;
@@ -32,7 +34,7 @@ public class ParsingJson {
 
     }
 
-    public StateMachine deserializeFile(String sourceFile) throws ParsingException {
+    public StateMachine deserializeFile(String sourceFile, StateNode parent) throws ParsingException {
         StateMachine stateMachine = null;
         try {
             if(sourceFile != null) {
@@ -41,6 +43,7 @@ public class ParsingJson {
                     FileReader reader = new FileReader(file.toString());
                     stateMachine = gson.fromJson(reader, StateMachine.class);
                     stateMachine.setPath(file);
+                    stateMachine.setParent(parent);
                 }
             }
         } catch (FileNotFoundException ex) {

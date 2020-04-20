@@ -48,7 +48,7 @@ public class ParsingGraph {
             currentElement = getInitialElement();
         } else {
             if (!(currentElement instanceof Transition)) {
-                currentEdge = findEdgeWithSource(currentElement);
+                currentEdge = findEdgeBySourceID(currentElement);
                 if (currentEdge != null) {
                     currentElement = currentEdge;
                 } else {
@@ -56,7 +56,7 @@ public class ParsingGraph {
                 }
             } else {
                 GElement GElement;
-                if ((GElement = findElementWithTarget(currentEdge)) != null) {
+                if ((GElement = findElementByTargetID(currentEdge)) != null) {
                     currentElement = GElement;
                 } else {
                     throw new ParsingException("No source GElement found for edge " + currentEdge.getId());
@@ -78,28 +78,36 @@ public class ParsingGraph {
         return null;
     }
 
-    private Transition findEdgeWithSource(GElement source) throws ParsingException {
-        List<Transition> sourceList = new ArrayList<>();
+    private List<Transition> getTargetList(GElement source) {
+        List<Transition> targetList = new ArrayList<>();
         for (int i = 0; i < stateMachine.getTransitionList().size(); i++) {
             Transition transition = stateMachine.getTransitionList().get(i);
             if (transition.getSourceID().equals(source.getId())) {
-                sourceList.add(transition);
+                targetList.add(transition);
             }
         }
+        return targetList;
+    }
+
+    private Transition findEdgeBySourceID(GElement source) throws ParsingException {
+        List<Transition> targetList = getTargetList(source);
+        if(stateMachine.getParent() != null) {
+            targetList.addAll(getTargetList(stateMachine.getParent()));
+        }
         Transition transition = null;
-        if (sourceList.size() > 1) {
-            transition = processEvent(sourceList);
+        if (targetList.size() > 1) {
+            transition = processEvent(targetList);
             if(transition != null) {
                 eventFlow.add(new EventFlowEntry(((StateNode)source).getLabel(), transition.getEvent()));
             }
-        } else if (sourceList.size() == 1) {
-            transition = sourceList.get(0);
+        } else if (targetList.size() == 1) {
+            transition = targetList.get(0);
             eventFlow.add(new EventFlowEntry(((StateNode)source).getLabel(), transition.getEvent()));
         }
         return transition;
     }
 
-    private GElement findElementWithTarget(Transition target) {
+    private GElement findElementByTargetID(Transition target) {
         for (int i = 0; i < stateMachine.getElementList().size(); i++) {
             GElement element = stateMachine.getElementList().get(i);
             if (element.getId().equals(target.getTargetID())) {

@@ -61,7 +61,7 @@ public class StateNodeDeserializer implements JsonDeserializer<StateNode> {
         }
         ParsingJson parsingJson = new ParsingJson(path, debugger);
         try {
-            state.setSubStateMachine(parsingJson.deserializeFile(state.getLabel() + ".sm"));
+            state.setSubStateMachine(parsingJson.deserializeFile(state.getLabel() + ".sm", state));
         } catch (ParsingException exc) {
             debugger.processException(exc);
         }

@@ -1,6 +1,7 @@
 package statemachine;
 
 import gml.GGraph;
+import gml.GNode;
 import interpreter.IElementVisitorStateMachine;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,11 +16,13 @@ public class StateMachine extends GGraph<IElementVisitorStateMachine> {
     @Setter
     @Getter
     private List<Transition> transitionList;
+    @Setter
+    @Getter
+    private StateNode parent;
 
     public StateMachine() {
 
     }
-
 
     @Override
     public void accept(IElementVisitorStateMachine elementVisitor) {

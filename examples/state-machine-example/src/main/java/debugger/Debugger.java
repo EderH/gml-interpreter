@@ -38,7 +38,6 @@ public class Debugger implements IDebugger {
 
 
     public Debugger(ClientHandler clientHandler) {
-        // mainInstance = Debugger.getMainInstance() == null ? this : Debugger.getMainInstance();
         this.clientHandler = clientHandler;
         this.breakpoints = new HashMap<>();
         this.parsingGraphs = new Stack<>();
@@ -62,7 +61,7 @@ public class Debugger implements IDebugger {
             }
             parsingJson = new ParsingJson(path.getParent(), this);
             try {
-                StateMachine stateMachine = parsingJson.deserializeFile(path.getFileName().toString());
+                StateMachine stateMachine = parsingJson.deserializeFile(path.getFileName().toString(), null);
                 parsingGraphs.push(new ParsingGraph(stateMachine, this));
             } catch (ParsingException exc) {
                 processException(exc);
@@ -243,7 +242,7 @@ public class Debugger implements IDebugger {
                     String value = "";
                     if (field.get(currentElement) != null) {
                         if(field.getType() == StateMachine.class) {
-                            value = ReflectionUtil.getInheritedDeclaredFieldValue(field.get(currentElement), "id", Object.class).toString() + ".wf";
+                            value = ReflectionUtil.getInheritedDeclaredFieldValue(field.get(currentElement), "id", Object.class).toString() + ".sm";
                         } else {
                             value = field.get(currentElement).toString();
                         }
@@ -269,7 +268,8 @@ public class Debugger implements IDebugger {
         ListIterator iterator = parsingGraphs.peek().getEventFlow().listIterator(parsingGraphs.peek().getEventFlow().size());
         while (iterator.hasPrevious()){
             EventFlowEntry previous = (EventFlowEntry) iterator.previous();
-            String event = "" + previous.getElement() + ":" + previous.getEvent();
+            String filename = getFullPathOfCurrentGraph().getFileName().toString();
+            String event = "" + filename + ":" + previous.getElement() + ":" + previous.getEvent();
             events.append(event);
             events.append("\n");
         }
