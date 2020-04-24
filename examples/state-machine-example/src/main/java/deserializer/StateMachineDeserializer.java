@@ -18,25 +18,27 @@ public class StateMachineDeserializer implements JsonDeserializer<StateMachine> 
         final JsonElement jsonID = jsonObject.get("id");
         final JsonArray jsonChildrenArray = jsonObject.get("children").getAsJsonArray();
 
+        StateMachine stateMachine = new StateMachine();
+        stateMachine.setId(jsonID.getAsString());
+
         List<GElement> GElementList = new ArrayList<>();
         List<Transition> transitionList = new ArrayList<>();
         List<StateNode> stateList = new ArrayList<>();
         for (int i = 0; i < jsonChildrenArray.size(); i++) {
             final JsonObject child = jsonChildrenArray.get(i).getAsJsonObject();
             if(child.has("kind")) {
-                GElement state = jsonDeserializationContext.deserialize(child,StateNode.class);
+                StateNode state = jsonDeserializationContext.deserialize(child,StateNode.class);
                 GElementList.add(state);
-                stateList.add((StateNode)state);
+                stateList.add(state);
             } else if(child.has("targetId")) {
-                GElement edge = jsonDeserializationContext.deserialize(child, Transition.class);
+                Transition edge = jsonDeserializationContext.deserialize(child, Transition.class);
                 GElementList.add(edge);
-                transitionList.add((Transition) edge);
+                transitionList.add(edge);
             }
         }
 
 
-        StateMachine stateMachine = new StateMachine();
-        stateMachine.setId(jsonID.getAsString());
+
         stateMachine.setElementList(GElementList);
         stateMachine.setStateList(stateList);
         stateMachine.setTransitionList(transitionList);

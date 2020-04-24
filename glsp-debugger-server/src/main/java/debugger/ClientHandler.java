@@ -4,67 +4,19 @@ import lombok.Getter;
 import lombok.Setter;
 import utils.DebuggerUtils;
 
-import java.io.*;
-import java.net.ServerSocket;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
-import java.util.concurrent.*;
 
-public class DebuggerServer {
-
-    private static ServerSocket serverSocket;
-    private static final int PORT = 5056;
-    private static ExecutorService es = Executors.newCachedThreadPool();
-
-    public static void main(String[] args) throws IOException {
-
-        try {
-            System.out.println("Starting Server");
-            serverSocket = new ServerSocket(PORT);
-            System.out.println("Server started and ready to accept clients");
-
-            while (true) {
-                try {
-                    Socket socket = serverSocket.accept();
-
-                    System.out.println("A new client is connected : " + socket);
-
-                    System.out.println("Assigning new thread for this client");
-
-                    es.submit(new ClientHandler(socket));
-
-                } catch(IOException ioe) {
-                    System.out.println("Error accepting connection");
-                    ioe.printStackTrace();
-                }
-            }
-
-        } catch(IOException e) {
-            System.out.println("Error starting Server on " + serverSocket);
-            e.printStackTrace();
-        }
-    }
-
-    private static void stopServer() {
-        es.shutdown();
-        try {
-            //Stop accepting requests.
-            serverSocket.close();
-        } catch (IOException e) {
-            System.out.println("Error in server shutdown");
-            e.printStackTrace();
-        }
-        System.exit(0);
-    }
-}
-
-
-class ClientHandler implements Runnable {
+public class ClientHandler implements Runnable {
 
     private BufferedReader br;
     private BufferedOutputStream bos;
     private Socket socket;
-    @Setter
     @Getter
+    @Setter
     private Debugger debugger;
 
 
@@ -73,7 +25,6 @@ class ClientHandler implements Runnable {
     }
 
     public void run() {
-        debugger = new Debugger(this);
         try {
             this.br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.bos = new BufferedOutputStream(socket.getOutputStream());
@@ -127,4 +78,3 @@ class ClientHandler implements Runnable {
         }
     }
 }
-

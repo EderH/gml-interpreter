@@ -4,6 +4,7 @@ import com.google.gson.*;
 import debugger.Debugger;
 import debugger.ParsingException;
 import parser.ParsingJson;
+import statemachine.StateMachine;
 import statemachine.StateNode;
 
 import java.lang.reflect.Type;

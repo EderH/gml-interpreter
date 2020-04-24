@@ -1,7 +1,7 @@
 package deserializer;
 
 import com.google.gson.*;
-import debugger.Debugger;
+import debugger.WorkflowDebugger;
 import debugger.ParsingException;
 import parser.ParsingJson;
 import workflow.TaskNode;
@@ -12,11 +12,11 @@ import java.nio.file.Path;
 public class TaskNodeDeserializer implements JsonDeserializer<TaskNode> {
 
     private Path path;
-    private Debugger debugger;
+    private WorkflowDebugger workflowDebugger;
 
-    public TaskNodeDeserializer(Path path, Debugger debugger) {
+    public TaskNodeDeserializer(Path path, WorkflowDebugger workflowDebugger) {
         this.path = path;
-        this.debugger = debugger;
+        this.workflowDebugger = workflowDebugger;
     }
 
     @Override
@@ -49,11 +49,11 @@ public class TaskNodeDeserializer implements JsonDeserializer<TaskNode> {
             }
 
         }
-        ParsingJson parsingJson = new ParsingJson(path, debugger);
+        ParsingJson parsingJson = new ParsingJson(path, workflowDebugger);
         try {
             task.setSubGraph(parsingJson.deserializeFile(task.getId() + ".wf"));
         } catch (ParsingException exc) {
-            debugger.processException(exc);
+            workflowDebugger.processException(exc);
         }
 
         return task;

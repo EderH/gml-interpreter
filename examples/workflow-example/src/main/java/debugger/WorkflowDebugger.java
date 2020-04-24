@@ -1,9 +1,6 @@
 package debugger;
 
 import gml.GElement;
-import gml.GGraph;
-import gml.GNode;
-import interpreter.Interpreter;
 import lombok.Getter;
 import lombok.Setter;
 import parser.ParsingGraph;
@@ -18,31 +15,22 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class Debugger implements IDebugger {
+public class WorkflowDebugger extends Debugger {
 
-    @Getter
-    @Setter
-    public static Debugger mainInstance;
+
 
     private boolean continueExc;
-    private boolean steppingIn;
-    private boolean steppingOut;
-    private boolean endOfFile;
-    private GElement currentElement;
-    private GElement previousGElement;
     private ParsingJson parsingJson;
-    private ClientHandler clientHandler;
     private Map<String, HashMap<String, Breakpoint>> breakpoints;
     private Stack<ParsingGraph> parsingGraphs;
 
 
-    public Debugger(ClientHandler clientHandler) {
-        // mainInstance = Debugger.getMainInstance() == null ? this : Debugger.getMainInstance();
-        this.clientHandler = clientHandler;
+    public WorkflowDebugger() {
         this.breakpoints = new HashMap<>();
         this.parsingGraphs = new Stack<>();
     }
 
+    @Override
     public void processClientCommand(DebuggerUtils.DebugAction action, String dataInput) {
         DebuggerUtils.DebugAction responseToken = action;
         StringBuilder response = new StringBuilder();
@@ -87,12 +75,12 @@ public class Debugger implements IDebugger {
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STEP_IN) {
-            steppingIn = true;
+            setSteppingIn(true);
             continueExc = false;
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STEP_OUT) {
-            steppingOut = true;
+            setSteppingOut(true);
             continueExc = false;
             action = DebuggerUtils.DebugAction.STEP;
 
@@ -114,15 +102,15 @@ public class Debugger implements IDebugger {
         if (action == DebuggerUtils.DebugAction.STEP) {
             responseToken = DebuggerUtils.DebugAction.STEP;
 
-            if (currentElement instanceof TaskNode && (((TaskNode) currentElement).getSubGraph() != null)) {
-                parsingGraphs.push(new ParsingGraph(((TaskNode) currentElement).getSubGraph()));
-                if (!steppingIn) {
+            if (getCurrentElement() instanceof TaskNode && (((TaskNode) getCurrentElement()).getSubGraph() != null)) {
+                parsingGraphs.push(new ParsingGraph(((TaskNode) getCurrentElement()).getSubGraph()));
+                if (!isSteppingIn()) {
                     if (!executeBlock()) {
                         return;
                     }
                 }
             }
-            if (steppingOut && parsingGraphs.size() > 1) {
+            if (isSteppingOut() && parsingGraphs.size() > 1) {
                 parsingGraphs.pop();
             }
             try {
@@ -131,10 +119,10 @@ public class Debugger implements IDebugger {
                 processException(exc);
                 return;
             }
-            if (endOfFile) {
+            if (isEndOfFile()) {
                 if (parsingGraphs.size() > 1) {
                     parsingGraphs.pop();
-                    endOfFile = false;
+                    setEndOfFile(false);
                     try {
                         getNextElement();
                         executeNextElement();
@@ -165,9 +153,9 @@ public class Debugger implements IDebugger {
             } catch (ParsingException exc) {
                 processException(exc);
             }
-            if (endOfFile) {
+            if (isEndOfFile()) {
                 parsingGraphs.pop();
-                endOfFile = false;
+                setEndOfFile(false);
                 return true;
             }
             if (!executeNextElement()) {
@@ -183,7 +171,7 @@ public class Debugger implements IDebugger {
         String filename = getFullPathOfCurrentGraph().toString();
         response.append(filename);
         response.append("\n");
-        response.append(currentElement.getId());
+        response.append(getCurrentElement().getId());
         response.append("\n");
 
         String vars = getVariables();
@@ -198,7 +186,7 @@ public class Debugger implements IDebugger {
     }
 
     public void sendBack(DebuggerUtils.DebugAction responseToken, String response) {
-        clientHandler.sendBack(DebuggerUtils.responseToken(responseToken) + response);
+        getClientHandler().sendBack(DebuggerUtils.responseToken(responseToken) + response);
     }
 
     //TODO: Maybe change to StringBuilder
@@ -221,16 +209,16 @@ public class Debugger implements IDebugger {
     private String getVariables() {
         StringBuilder vars = new StringBuilder();
         try {
-                List<Field> fields = ReflectionUtil.getInheritedDeclaredFields(currentElement.getClass(), Object.class);
+                List<Field> fields = ReflectionUtil.getInheritedDeclaredFields(getCurrentElement().getClass(), Object.class);
                 for (Field field : fields) {
                     String type = field.getType().toString();
                     field.setAccessible(true);
                     String value = "";
-                    if (field.get(currentElement) != null) {
+                    if (field.get(getCurrentElement()) != null) {
                         if(field.getType() == Graph.class) {
-                            value = ReflectionUtil.getInheritedDeclaredFieldValue(field.get(currentElement), "id", Object.class).toString() + ".wf";
+                            value = ReflectionUtil.getInheritedDeclaredFieldValue(field.get(getCurrentElement()), "id", Object.class).toString() + ".wf";
                         } else {
-                            value = field.get(currentElement).toString();
+                            value = field.get(getCurrentElement()).toString();
                         }
                     } else {
                         value = "null";
@@ -261,7 +249,7 @@ public class Debugger implements IDebugger {
 
         String stack = getStack();
         sb.append(stack);
-        clientHandler.sendBack(sb.toString());
+        getClientHandler().sendBack(sb.toString());
     }
 
     private void setBreakpoints(String data) {
@@ -280,11 +268,11 @@ public class Debugger implements IDebugger {
 
     private void getNextElement() throws ParsingException {
         ParsingGraph parser = parsingGraphs.peek();
-        GElement GElement = parser.parseNextElement();
-        if (GElement != null) {
-            currentElement = GElement;
+        GElement element = parser.parseNextElement();
+        if (element != null) {
+            setCurrentElement(element);
         } else {
-            endOfFile = true;
+            setEndOfFile(true);
         }
 
     }
@@ -306,7 +294,7 @@ public class Debugger implements IDebugger {
     }
 
     private boolean executeNextElement() {
-        if (checkBreakpoint(currentElement)) {
+        if (checkBreakpoint(getCurrentElement())) {
             return false;
         }
         // currentElement.accept(new Interpreter());

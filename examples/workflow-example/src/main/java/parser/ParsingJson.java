@@ -2,7 +2,7 @@ package parser;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import debugger.Debugger;
+import debugger.WorkflowDebugger;
 import debugger.ParsingException;
 import deserializer.EdgeDeserializer;
 import deserializer.GraphDeserializer;
@@ -24,11 +24,11 @@ public class ParsingJson {
     private Gson gson;
     private Path sourceDirectory;
 
-    public ParsingJson(Path path, Debugger debugger) {
+    public ParsingJson(Path path, WorkflowDebugger workflowDebugger) {
         this.sourceDirectory = path;
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Graph.class, new GraphDeserializer());
-        gsonBuilder.registerTypeAdapter(TaskNode.class, new TaskNodeDeserializer(path, debugger));
+        gsonBuilder.registerTypeAdapter(TaskNode.class, new TaskNodeDeserializer(path, workflowDebugger));
         gsonBuilder.registerTypeAdapter(ActivityNode.class, new ActivityNodeDeserializer());
         gsonBuilder.registerTypeAdapter(Edge.class, new EdgeDeserializer());
         gson = gsonBuilder.create();

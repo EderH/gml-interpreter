@@ -17,23 +17,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class Debugger implements IDebugger {
-
-    @Getter
-    @Setter
-    public static Debugger mainInstance;
+public class Debugger{
 
     private boolean continueExc;
     private boolean steppingIn;
     private boolean steppingOut;
     private boolean endOfFile;
     private GElement currentElement;
-    private GElement previousGElement;
     private ParsingJson parsingJson;
 
     @Getter
     private ClientHandler clientHandler;
     private Map<String, HashMap<String, Breakpoint>> breakpoints;
+    @Getter
     private Stack<ParsingGraph> parsingGraphs;
 
 

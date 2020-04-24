@@ -78,22 +78,29 @@ public class ParsingGraph {
         return null;
     }
 
-    private List<Transition> getTargetList(GElement source) {
-        List<Transition> targetList = new ArrayList<>();
+    private HashMap<String,Transition> getTargetList(StateMachine stateMachine, GElement source) {
+        HashMap<String,Transition> targetList = new HashMap<>();
         for (int i = 0; i < stateMachine.getTransitionList().size(); i++) {
             Transition transition = stateMachine.getTransitionList().get(i);
             if (transition.getSourceID().equals(source.getId())) {
-                targetList.add(transition);
+                targetList.put(transition.getId(), transition);
             }
         }
         return targetList;
     }
 
     private Transition findEdgeBySourceID(GElement source) throws ParsingException {
-        List<Transition> targetList = getTargetList(source);
-        if(stateMachine.getParent() != null) {
-            targetList.addAll(getTargetList(stateMachine.getParent()));
-        }
+        LinkedHashMap<String, Transition> targetList = new LinkedHashMap<>();
+            ListIterator iterator = debugger.getParsingGraphs().listIterator(debugger.getParsingGraphs().size());
+            StateNode node = (StateNode)source;
+            while (iterator.hasPrevious()){
+                ParsingGraph previous = (ParsingGraph)iterator.previous();
+                if(node != null) {
+
+                    targetList.putAll(getTargetList(previous.stateMachine, node));
+                }
+                node = previous.stateMachine.getParent();
+            }
         Transition transition = null;
         if (targetList.size() > 1) {
             transition = processEvent(targetList);
@@ -101,11 +108,12 @@ public class ParsingGraph {
                 eventFlow.add(new EventFlowEntry(((StateNode)source).getLabel(), transition.getEvent()));
             }
         } else if (targetList.size() == 1) {
-            transition = targetList.get(0);
+            transition = targetList.entrySet().iterator().next().getValue();
             eventFlow.add(new EventFlowEntry(((StateNode)source).getLabel(), transition.getEvent()));
         }
         return transition;
     }
+
 
     private GElement findElementByTargetID(Transition target) {
         for (int i = 0; i < stateMachine.getElementList().size(); i++) {
@@ -117,16 +125,16 @@ public class ParsingGraph {
         return null;
     }
 
-    private Transition processEvent(List<Transition> sourceList) throws ParsingException {
+    private Transition processEvent(HashMap<String, Transition> sourceList) throws ParsingException {
 
 
         StringBuilder stringBuilder = new StringBuilder();
         StringBuilder result = new StringBuilder();
-        for (Transition transition : sourceList) {
-            if (transition.getEvent().isEmpty()) {
+        for (Map.Entry<String,Transition> entry : sourceList.entrySet()) {
+            if (entry.getValue().getEvent().isEmpty()) {
                 stringBuilder.append("default");
             } else {
-                stringBuilder.append(transition.getEvent());
+                stringBuilder.append(entry.getValue().getEvent());
             }
             stringBuilder.append("\n");
         }
@@ -145,9 +153,9 @@ public class ParsingGraph {
             if (index >= 0) {
                 data = (index < dataInput.length() - 1 ? dataInput.substring(index + 1) : "").trim();
             }
-            for (Transition transition : sourceList) {
-                if (transition.getEvent().equals(data)) {
-                    return transition;
+            for (Map.Entry<String,Transition> entry : sourceList.entrySet()) {
+                if (entry.getValue().getEvent().equals(data)) {
+                    return entry.getValue();
                 }
             }
             System.out.println(dataInput);
