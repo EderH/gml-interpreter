@@ -2,6 +2,7 @@ package parser;
 
 import debugger.ParsingException;
 import gml.GElement;
+import gml.GGraph;
 import lombok.Getter;
 import lombok.Setter;
 import utils.WeightedRandomBagUtil;
@@ -11,7 +12,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ParsingGraph {
+public class WorkflowParsingGraph extends ParsingGraph{
 
     @Setter
     @Getter
@@ -22,22 +23,22 @@ public class ParsingGraph {
     private GElement currentElement;
     @Setter
     @Getter
-    private Graph graph;
+    private GGraph graph;
 
-    public ParsingGraph(Graph graph) {
+    public WorkflowParsingGraph(Graph graph) {
         this.graph = graph;
         this.linkedList = new LinkedList<>();
     }
 
     public GElement parseNextElement() throws ParsingException {
-        if (graph.getNodeList().isEmpty()) {
+        if (((Graph)graph).getNodeList().isEmpty()) {
             throw new ParsingException("There is no TaskNode GElement in Diagram");
         }
         if (currentElement == null) {
-            currentElement = graph.getNodeList().get(0);
+            currentElement = ((Graph)graph).getNodeList().get(0);
         } else {
             if (!(currentElement instanceof Edge)) {
-                currentEdge = findEdgeWithSource(currentElement, graph);
+                currentEdge = findEdgeWithSource(currentElement, ((Graph)graph));
                 if (currentEdge != null) {
                     currentElement = currentEdge;
                 } else {
@@ -45,7 +46,7 @@ public class ParsingGraph {
                 }
             } else {
                 GElement GElement;
-                if ((GElement = findElementWithTarget(currentEdge, graph)) != null) {
+                if ((GElement = findElementWithTarget(currentEdge, ((Graph)graph))) != null) {
                     currentElement = GElement;
                 } else {
                     throw new ParsingException("No source GElement found for edge " + currentEdge.getId());

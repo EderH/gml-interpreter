@@ -2,13 +2,11 @@ package parser;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import debugger.Debugger;
+import debugger.StateMachineDefaultDebugger;
 import debugger.ParsingException;
 import deserializer.StateMachineDeserializer;
 import deserializer.StateNodeDeserializer;
 import deserializer.TransitionDeserializer;
-import gml.GGraph;
-import gml.GNode;
 import statemachine.StateMachine;
 import statemachine.StateNode;
 import statemachine.Transition;
@@ -24,11 +22,11 @@ public class ParsingJson {
     private Gson gson;
     private Path sourceDirectory;
 
-    public ParsingJson(Path path, Debugger debugger) {
+    public ParsingJson(Path path, StateMachineDefaultDebugger stateMachineDebugger) {
         this.sourceDirectory = path;
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(StateMachine.class, new StateMachineDeserializer());
-        gsonBuilder.registerTypeAdapter(StateNode.class, new StateNodeDeserializer(path, debugger));
+        gsonBuilder.registerTypeAdapter(StateNode.class, new StateNodeDeserializer(path, stateMachineDebugger));
         gsonBuilder.registerTypeAdapter(Transition.class, new TransitionDeserializer());
         gson = gsonBuilder.create();
 

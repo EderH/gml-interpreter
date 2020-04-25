@@ -12,6 +12,10 @@ public class Edge extends GEdge<IElementVisitorWorkflow> {
     @Getter
     private boolean statement;
 
+    public Edge(){
+        super();
+    }
+
     @Override
     public void accept(IElementVisitorWorkflow elementVisitor) {
         elementVisitor.visit(this);

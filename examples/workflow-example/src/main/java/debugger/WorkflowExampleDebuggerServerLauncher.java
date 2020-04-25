@@ -5,7 +5,7 @@ public class WorkflowExampleDebuggerServerLauncher extends DefaultDebuggerServer
     public static void main(String[] args) {
         DebuggerServerLauncher launcher;
 
-        launcher = new DefaultDebuggerServerLauncher(new WorkflowDebugger());
+        launcher = new DefaultDebuggerServerLauncher(new WorkflowDebuggerModule());
         launcher.start(5056);
 
     }

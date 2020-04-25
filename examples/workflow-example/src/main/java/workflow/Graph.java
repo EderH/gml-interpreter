@@ -19,7 +19,7 @@ public class Graph extends GGraph<IElementVisitorWorkflow> {
     private List<Edge> edgeList;
 
     public Graph() {
-
+        super();
     }
 
 

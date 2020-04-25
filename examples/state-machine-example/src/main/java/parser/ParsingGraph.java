@@ -1,10 +1,10 @@
 package parser;
 
-import com.google.gson.internal.LinkedTreeMap;
 import debugger.ClientHandler;
-import debugger.Debugger;
+import debugger.StateMachineDefaultDebugger;
 import debugger.ParsingException;
 import gml.GElement;
+import gml.GGraph;
 import lombok.Getter;
 import lombok.Setter;
 import statemachine.EventFlowEntry;
@@ -30,18 +30,18 @@ public class ParsingGraph {
     private LinkedList<EventFlowEntry> eventFlow;
     @Setter
     @Getter
-    private StateMachine stateMachine;
-    private Debugger debugger;
+    private GGraph stateMachine;
+    private StateMachineDefaultDebugger stateMachineDebugger;
 
-    public ParsingGraph(StateMachine stateMachine, Debugger debugger) {
+    public ParsingGraph(StateMachine stateMachine, StateMachineDefaultDebugger stateMachineDebugger) {
         this.stateMachine = stateMachine;
         this.linkedList = new LinkedList<>();
         this.eventFlow = new LinkedList<>();
-        this.debugger = debugger;
+        this.stateMachineDebugger = stateMachineDebugger;
     }
 
     public GElement parseNextElement() throws ParsingException {
-        if (stateMachine.getStateList().isEmpty()) {
+        if (((StateMachine)stateMachine).getStateList().isEmpty()) {
             throw new ParsingException("There is no TaskNode GElement in Diagram");
         }
         if (currentElement == null) {
@@ -70,7 +70,7 @@ public class ParsingGraph {
     }
 
     private GElement getInitialElement() {
-        for (StateNode state : stateMachine.getStateList()) {
+        for (StateNode state : ((StateMachine)stateMachine).getStateList()) {
             if (state.getStateTyp().equals("initialState")) {
                 return state;
             }
@@ -91,15 +91,15 @@ public class ParsingGraph {
 
     private Transition findEdgeBySourceID(GElement source) throws ParsingException {
         LinkedHashMap<String, Transition> targetList = new LinkedHashMap<>();
-            ListIterator iterator = debugger.getParsingGraphs().listIterator(debugger.getParsingGraphs().size());
+            ListIterator iterator = stateMachineDebugger.getParsingGraphs().listIterator(stateMachineDebugger.getParsingGraphs().size());
             StateNode node = (StateNode)source;
             while (iterator.hasPrevious()){
                 ParsingGraph previous = (ParsingGraph)iterator.previous();
                 if(node != null) {
 
-                    targetList.putAll(getTargetList(previous.stateMachine, node));
+                    targetList.putAll(getTargetList(((StateMachine)previous.stateMachine), node));
                 }
-                node = previous.stateMachine.getParent();
+                node = ((StateMachine)previous.stateMachine).getParent();
             }
         Transition transition = null;
         if (targetList.size() > 1) {
@@ -117,7 +117,7 @@ public class ParsingGraph {
 
     private GElement findElementByTargetID(Transition target) {
         for (int i = 0; i < stateMachine.getElementList().size(); i++) {
-            GElement element = stateMachine.getElementList().get(i);
+            GElement element = ((StateMachine)stateMachine).getElementList().get(i);
             if (element.getId().equals(target.getTargetID())) {
                 return element;
             }
@@ -143,9 +143,9 @@ public class ParsingGraph {
         result.append(triggersCount);
         result.append("\n");
         result.append(triggers);
-        debugger.sendBack(DebuggerUtils.DebugAction.EVENT, result.toString());
+        stateMachineDebugger.sendBack(DebuggerUtils.DebugAction.EVENT, result.toString());
 
-        ClientHandler clientHandler = debugger.getClientHandler();
+        ClientHandler clientHandler = stateMachineDebugger.getClientHandler();
         try {
             String dataInput = clientHandler.getBr().readLine();
             int index = dataInput.indexOf("|");

@@ -4,6 +4,8 @@ import com.google.gson.*;
 import debugger.WorkflowDebugger;
 import debugger.ParsingException;
 import parser.ParsingJson;
+import parser.WorkflowParsingJson;
+import workflow.Graph;
 import workflow.TaskNode;
 
 import java.lang.reflect.Type;
@@ -49,9 +51,9 @@ public class TaskNodeDeserializer implements JsonDeserializer<TaskNode> {
             }
 
         }
-        ParsingJson parsingJson = new ParsingJson(path, workflowDebugger);
+        ParsingJson parsingJson = new WorkflowParsingJson(path, workflowDebugger);
         try {
-            task.setSubGraph(parsingJson.deserializeFile(task.getId() + ".wf"));
+            task.setSubGraph((Graph)parsingJson.deserializeFile(task.getId() + ".wf"));
         } catch (ParsingException exc) {
             workflowDebugger.processException(exc);
         }

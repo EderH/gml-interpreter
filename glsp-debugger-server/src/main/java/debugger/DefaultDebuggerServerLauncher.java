@@ -1,30 +1,28 @@
 package debugger;
 
-import lombok.Getter;
-import lombok.Setter;
-import utils.DebuggerUtils;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class DefaultDebuggerServerLauncher extends DebuggerServerLauncher{
+public class DefaultDebuggerServerLauncher extends DebuggerServerLauncher {
 
     private static ServerSocket serverSocket;
     private static ExecutorService es = Executors.newCachedThreadPool();
 
-    public DefaultDebuggerServerLauncher(){}
-
-    public DefaultDebuggerServerLauncher(Debugger debugger) {
-        super(debugger);
+    public DefaultDebuggerServerLauncher() {
     }
 
+    public DefaultDebuggerServerLauncher(DefaultDebuggerModule debuggerModule) {
+        super(debuggerModule);
+    }
 
+    @Override
     public void run(int port) {
 
         try {
@@ -40,20 +38,21 @@ public class DefaultDebuggerServerLauncher extends DebuggerServerLauncher{
 
                     System.out.println("Assigning new thread for this client");
 
-                    Debugger debugger = getDebugger();
+                    Injector injector = Guice.createInjector(getModule());
+                    DefaultDebugger defaultDebugger = injector.getInstance(DefaultDebugger.class);
                     ClientHandler handler = new ClientHandler(socket);
-                    handler.setDebugger(debugger);
-                    debugger.setClientHandler(handler);
+                    handler.setDebugger(defaultDebugger);
+                    defaultDebugger.setClientHandler(handler);
 
                     es.submit(handler);
 
-                } catch(IOException ioe) {
+                } catch (IOException ioe) {
                     System.out.println("Error accepting connection");
                     ioe.printStackTrace();
                 }
             }
 
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.out.println("Error starting Server on " + serverSocket);
             e.printStackTrace();
         }
@@ -61,14 +60,16 @@ public class DefaultDebuggerServerLauncher extends DebuggerServerLauncher{
 
     @Override
     public void shutdown() {
-        es.shutdown();
-        try {
-            //Stop accepting requests.
-            serverSocket.close();
-        } catch (IOException e) {
-            System.out.println("Error in server shutdown");
-            e.printStackTrace();
+        if (!serverSocket.isClosed()) {
+            try {
+                //Stop accepting requests.
+                serverSocket.close();
+            } catch (IOException e) {
+                System.out.println("Error in server shutdown");
+                e.printStackTrace();
+            }
         }
+        es.shutdown();
         System.exit(0);
     }
 }

@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>glsp-debugger-server</artifactId>
+    <artifactId>glsp-stateMachineDebugger-server</artifactId>
     <dependencies>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -32,6 +32,11 @@
             <artifactId>lombok</artifactId>
             <version>1.18.8</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>4.1.0</version>
         </dependency>
     </dependencies>
     <build>

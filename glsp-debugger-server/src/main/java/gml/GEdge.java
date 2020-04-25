@@ -3,7 +3,7 @@ package gml;
 import lombok.Getter;
 import lombok.Setter;
 
-public abstract class GEdge<T extends IElementVisitor> extends GElement{
+public abstract class GEdge<T extends IElementVisitor> extends GElement<T>{
     @Getter
     @Setter
     private String sourceID;
@@ -11,5 +11,4 @@ public abstract class GEdge<T extends IElementVisitor> extends GElement{
     @Setter
     private String targetID;
 
-    public abstract void accept(T elementVisitor);
 }

@@ -1,10 +1,10 @@
 package debugger;
 
 import gml.GElement;
-import lombok.Getter;
-import lombok.Setter;
+import interpreter.WorkflowInterpreter;
 import parser.ParsingGraph;
-import parser.ParsingJson;
+import parser.WorkflowParsingGraph;
+import parser.WorkflowParsingJson;
 import utils.DebuggerUtils;
 import utils.ReflectionUtil;
 import workflow.Graph;
@@ -15,19 +15,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class WorkflowDebugger extends Debugger {
-
-
-
-    private boolean continueExc;
-    private ParsingJson parsingJson;
-    private Map<String, HashMap<String, Breakpoint>> breakpoints;
-    private Stack<ParsingGraph> parsingGraphs;
-
+public class WorkflowDebugger extends DefaultDebugger {
 
     public WorkflowDebugger() {
-        this.breakpoints = new HashMap<>();
-        this.parsingGraphs = new Stack<>();
+        super();
     }
 
     @Override
@@ -46,10 +37,10 @@ public class WorkflowDebugger extends Debugger {
                 processException(new ParsingException("Path to file not available"));
                 return;
             }
-            parsingJson = new ParsingJson(path.getParent(), this);
+            setParsingJson(new WorkflowParsingJson(path.getParent(), this));
             try {
-                Graph graph = parsingJson.deserializeFile(path.getFileName().toString());
-                parsingGraphs.push(new ParsingGraph(graph));
+                Graph graph = (Graph)getParsingJson().deserializeFile(path.getFileName().toString());
+                getParsingGraphs().push(new WorkflowParsingGraph(graph));
             } catch (ParsingException exc) {
                 processException(exc);
                 return;
@@ -59,8 +50,8 @@ public class WorkflowDebugger extends Debugger {
         } else if (action == DebuggerUtils.DebugAction.SET_BP) {
 
             setBreakpoints(data);
-            for(String k : breakpoints.keySet()) {
-                Map<String, Breakpoint> m1 = breakpoints.get(k);
+            for(String k : getBreakpoints().keySet()) {
+                Map<String, Breakpoint> m1 = getBreakpoints().get(k);
                 System.out.println("File: " + k);
                 for(String k1 : m1.keySet()) {
                     System.out.println("breakpoint: " + m1.get(k1).getId());
@@ -71,17 +62,17 @@ public class WorkflowDebugger extends Debugger {
 
         } else if (action == DebuggerUtils.DebugAction.CONTINUE) {
 
-            continueExc = true;
+            setContinueExc(true);
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STEP_IN) {
             setSteppingIn(true);
-            continueExc = false;
+            setContinueExc(false);
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STEP_OUT) {
             setSteppingOut(true);
-            continueExc = false;
+            setContinueExc(false);
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STACK) {
@@ -93,7 +84,7 @@ public class WorkflowDebugger extends Debugger {
             response.append(getVariables());
 
         } else if (action == DebuggerUtils.DebugAction.STEP) {
-            continueExc = false;
+            setContinueExc(false);
         } else {
             System.out.println("Unknown command: " + action.toString());
             return;
@@ -103,15 +94,15 @@ public class WorkflowDebugger extends Debugger {
             responseToken = DebuggerUtils.DebugAction.STEP;
 
             if (getCurrentElement() instanceof TaskNode && (((TaskNode) getCurrentElement()).getSubGraph() != null)) {
-                parsingGraphs.push(new ParsingGraph(((TaskNode) getCurrentElement()).getSubGraph()));
+                getParsingGraphs().push(new WorkflowParsingGraph(((TaskNode) getCurrentElement()).getSubGraph()));
                 if (!isSteppingIn()) {
                     if (!executeBlock()) {
                         return;
                     }
                 }
             }
-            if (isSteppingOut() && parsingGraphs.size() > 1) {
-                parsingGraphs.pop();
+            if (isSteppingOut() && getParsingGraphs().size() > 1) {
+                getParsingGraphs().pop();
             }
             try {
                 getNextElement();
@@ -120,8 +111,8 @@ public class WorkflowDebugger extends Debugger {
                 return;
             }
             if (isEndOfFile()) {
-                if (parsingGraphs.size() > 1) {
-                    parsingGraphs.pop();
+                if (getParsingGraphs().size() > 1) {
+                    getParsingGraphs().pop();
                     setEndOfFile(false);
                     try {
                         getNextElement();
@@ -154,7 +145,7 @@ public class WorkflowDebugger extends Debugger {
                 processException(exc);
             }
             if (isEndOfFile()) {
-                parsingGraphs.pop();
+                getParsingGraphs().pop();
                 setEndOfFile(false);
                 return true;
             }
@@ -185,21 +176,16 @@ public class WorkflowDebugger extends Debugger {
         return response.toString();
     }
 
-    public void sendBack(DebuggerUtils.DebugAction responseToken, String response) {
-        getClientHandler().sendBack(DebuggerUtils.responseToken(responseToken) + response);
-    }
-
-    //TODO: Maybe change to StringBuilder
     private String getStack() {
         StringBuilder stack = new StringBuilder();
-        ListIterator iterator = parsingGraphs.listIterator(parsingGraphs.size());
+        ListIterator iterator = getParsingGraphs().listIterator(getParsingGraphs().size());
 
         while (iterator.hasPrevious()){
             ParsingGraph previous = (ParsingGraph)iterator.previous();
             String filename = previous.getGraph().getPath().getFileName().toString();
             stack.append(filename);
             stack.append("\n");
-            stack.append(previous.getCurrentElement().getId());
+            stack.append(((WorkflowParsingGraph)previous).getCurrentElement().getId());
             stack.append("\n");
         }
 
@@ -252,22 +238,10 @@ public class WorkflowDebugger extends Debugger {
         getClientHandler().sendBack(sb.toString());
     }
 
-    private void setBreakpoints(String data) {
-        if (!data.isEmpty()) {
-            String[] parts = data.split("[|]+");
-            String file = parts[0];
-            HashMap<String, Breakpoint> bpMap = new HashMap<>();
-            for (int i = 1; i < parts.length; i++) {
-                bpMap.put(parts[i], new Breakpoint(parts[i]));
-            }
-            breakpoints.put(file, bpMap);
-        } else {
-            breakpoints.clear();
-        }
-    }
+
 
     private void getNextElement() throws ParsingException {
-        ParsingGraph parser = parsingGraphs.peek();
+        ParsingGraph parser = getParsingGraphs().peek();
         GElement element = parser.parseNextElement();
         if (element != null) {
             setCurrentElement(element);
@@ -277,27 +251,13 @@ public class WorkflowDebugger extends Debugger {
 
     }
 
-    private boolean checkBreakpoint(GElement GElement) {
-        String filename = getFullPathOfCurrentGraph().getFileName().toString();
-        if (!breakpoints.isEmpty() && breakpoints.containsKey(filename) && breakpoints.get(filename).containsKey(GElement.getId())) {
-            Breakpoint breakpoint = breakpoints.get(filename).get(GElement.getId());
-            if (breakpoint.getHitCount() == 0) {
-                breakpoint.increaseHitCount();
-                return true;
-            }
-        }
-        return false;
-    }
 
-    private Path getFullPathOfCurrentGraph() {
-        return parsingGraphs.peek().getGraph().getPath();
-    }
 
     private boolean executeNextElement() {
         if (checkBreakpoint(getCurrentElement())) {
             return false;
         }
-        // currentElement.accept(new Interpreter());
+        getCurrentElement().accept(new WorkflowInterpreter());
         return true;
     }
 }

@@ -5,9 +5,9 @@ import workflow.Edge;
 import workflow.Graph;
 import workflow.TaskNode;
 
-public class Interpreter implements IElementVisitorWorkflow {
+public class WorkflowInterpreter implements IElementVisitorWorkflow {
 
-    public Interpreter() {
+    public WorkflowInterpreter() {
 
     }
 

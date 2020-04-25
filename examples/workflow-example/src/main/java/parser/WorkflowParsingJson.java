@@ -19,12 +19,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class ParsingJson {
+public class WorkflowParsingJson extends ParsingJson {
 
     private Gson gson;
     private Path sourceDirectory;
 
-    public ParsingJson(Path path, WorkflowDebugger workflowDebugger) {
+    public WorkflowParsingJson(Path path, WorkflowDebugger workflowDebugger) {
         this.sourceDirectory = path;
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Graph.class, new GraphDeserializer());

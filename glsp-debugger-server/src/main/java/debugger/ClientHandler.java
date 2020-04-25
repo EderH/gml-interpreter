@@ -12,12 +12,13 @@ import java.net.Socket;
 
 public class ClientHandler implements Runnable {
 
+    @Getter
     private BufferedReader br;
     private BufferedOutputStream bos;
     private Socket socket;
     @Getter
     @Setter
-    private Debugger debugger;
+    private DefaultDebugger debugger;
 
 
     public ClientHandler(Socket socket) {
@@ -67,7 +68,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void disconnect() {
+    public void disconnect() {
         try {
             br.close();
             bos.close();

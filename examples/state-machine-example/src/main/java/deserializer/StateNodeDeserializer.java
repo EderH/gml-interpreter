@@ -1,10 +1,9 @@
 package deserializer;
 
 import com.google.gson.*;
-import debugger.Debugger;
+import debugger.StateMachineDefaultDebugger;
 import debugger.ParsingException;
 import parser.ParsingJson;
-import statemachine.StateMachine;
 import statemachine.StateNode;
 
 import java.lang.reflect.Type;
@@ -14,11 +13,11 @@ public class StateNodeDeserializer implements JsonDeserializer<StateNode> {
 
 
     private Path path;
-    private Debugger debugger;
+    private StateMachineDefaultDebugger stateMachineDebugger;
 
-    public StateNodeDeserializer(Path path, Debugger debugger) {
+    public StateNodeDeserializer(Path path, StateMachineDefaultDebugger stateMachineDebugger) {
         this.path = path;
-        this.debugger = debugger;
+        this.stateMachineDebugger = stateMachineDebugger;
     }
 
     @Override
@@ -60,11 +59,11 @@ public class StateNodeDeserializer implements JsonDeserializer<StateNode> {
             }
 
         }
-        ParsingJson parsingJson = new ParsingJson(path, debugger);
+        ParsingJson parsingJson = new ParsingJson(path, stateMachineDebugger);
         try {
             state.setSubStateMachine(parsingJson.deserializeFile(state.getLabel() + ".sm", state));
         } catch (ParsingException exc) {
-            debugger.processException(exc);
+            stateMachineDebugger.processException(exc);
         }
 
         return state;

@@ -1,7 +1,6 @@
 package debugger;
 
 import gml.GElement;
-import jdk.jfr.Event;
 import lombok.Getter;
 import lombok.Setter;
 import parser.ParsingGraph;
@@ -17,7 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class Debugger{
+public class StateMachineDefaultDebugger extends DefaultDebugger {
 
     private boolean continueExc;
     private boolean steppingIn;
@@ -26,6 +25,7 @@ public class Debugger{
     private GElement currentElement;
     private ParsingJson parsingJson;
 
+    @Setter
     @Getter
     private ClientHandler clientHandler;
     private Map<String, HashMap<String, Breakpoint>> breakpoints;
@@ -33,8 +33,7 @@ public class Debugger{
     private Stack<ParsingGraph> parsingGraphs;
 
 
-    public Debugger(ClientHandler clientHandler) {
-        this.clientHandler = clientHandler;
+    public StateMachineDefaultDebugger() {
         this.breakpoints = new HashMap<>();
         this.parsingGraphs = new Stack<>();
 
@@ -68,14 +67,6 @@ public class Debugger{
         } else if (action == DebuggerUtils.DebugAction.SET_BP) {
 
             setBreakpoints(data);
-            for(String k : breakpoints.keySet()) {
-                Map<String, Breakpoint> m1 = breakpoints.get(k);
-                System.out.println("File: " + k);
-                for(String k1 : m1.keySet()) {
-                    System.out.println("breakpoint: " + m1.get(k1).getId());
-                }
-            }
-
             return;
 
         } else if (action == DebuggerUtils.DebugAction.CONTINUE) {
@@ -101,7 +92,7 @@ public class Debugger{
 
             response.append(getVariables());
 
-        } else if (action == DebuggerUtils.DebugAction.EVENT_FLOW ) {
+        } else if (action == DebuggerUtils.DebugAction.EVENT_FLOW) {
 
             response.append(getEventFlow());
 
@@ -116,7 +107,7 @@ public class Debugger{
             responseToken = DebuggerUtils.DebugAction.STEP;
 
             if (currentElement instanceof StateNode && (((StateNode) currentElement).getSubStateMachine() != null)) {
-                parsingGraphs.push(new ParsingGraph(((StateNode) currentElement).getSubStateMachine(),this));
+                parsingGraphs.push(new ParsingGraph(((StateNode) currentElement).getSubStateMachine(), this));
                 if (!steppingIn) {
                     if (!executeBlock()) {
                         return;
@@ -217,8 +208,8 @@ public class Debugger{
         StringBuilder stack = new StringBuilder();
         ListIterator iterator = parsingGraphs.listIterator(parsingGraphs.size());
 
-        while (iterator.hasPrevious()){
-            ParsingGraph previous = (ParsingGraph)iterator.previous();
+        while (iterator.hasPrevious()) {
+            ParsingGraph previous = (ParsingGraph) iterator.previous();
             String filename = previous.getStateMachine().getPath().getFileName().toString();
             String frame = "" + filename + ":" + previous.getCurrentElement().getId();
             stack.append(frame);
@@ -231,28 +222,28 @@ public class Debugger{
     private String getVariables() {
         StringBuilder vars = new StringBuilder();
         try {
-                List<Field> fields = ReflectionUtil.getInheritedDeclaredFields(currentElement.getClass(), Object.class);
-                for (Field field : fields) {
-                    String type = field.getType().toString();
-                    field.setAccessible(true);
-                    String value = "";
-                    if (field.get(currentElement) != null) {
-                        if(field.getType() == StateMachine.class) {
-                            value = ReflectionUtil.getInheritedDeclaredFieldValue(field.get(currentElement), "id", Object.class).toString() + ".sm";
-                        } else {
-                            value = field.get(currentElement).toString();
-                        }
+            List<Field> fields = ReflectionUtil.getInheritedDeclaredFields(currentElement.getClass(), Object.class);
+            for (Field field : fields) {
+                String type = field.getType().toString();
+                field.setAccessible(true);
+                String value = "";
+                if (field.get(currentElement) != null) {
+                    if (field.getType() == StateMachine.class) {
+                        value = ReflectionUtil.getInheritedDeclaredFieldValue(field.get(currentElement), "id", Object.class).toString() + ".sm";
                     } else {
-                        value = "null";
+                        value = field.get(currentElement).toString();
                     }
-                    field.setAccessible(false);
-                    String name = field.getName();
-                    // TODO local or global value
-                    String var = "" + name + ":" + "0" + ":" + type + ":" + value;
-                    vars.append(var);
-                    vars.append("\n");
+                } else {
+                    value = "null";
+                }
+                field.setAccessible(false);
+                String name = field.getName();
+
+                String var = "" + name + ":" + "0" + ":" + type + ":" + value;
+                vars.append(var);
+                vars.append("\n");
             }
-        } catch (IllegalAccessException | NoSuchFieldException   ex) {
+        } catch (IllegalAccessException | NoSuchFieldException ex) {
             ex.printStackTrace();
         }
         return vars.toString();
@@ -262,7 +253,7 @@ public class Debugger{
         StringBuilder events = new StringBuilder();
 
         ListIterator iterator = parsingGraphs.peek().getEventFlow().listIterator(parsingGraphs.peek().getEventFlow().size());
-        while (iterator.hasPrevious()){
+        while (iterator.hasPrevious()) {
             EventFlowEntry previous = (EventFlowEntry) iterator.previous();
             String filename = getFullPathOfCurrentGraph().getFileName().toString();
             String event = "" + filename + ":" + previous.getElement() + ":" + previous.getEvent();
@@ -278,6 +269,7 @@ public class Debugger{
         sb.append("exc\n");
         sb.append(exc.getMessage());
         sb.append("\n");
+
         String vars = getVariables();
         int varsCount = vars.equals("") ? 0 : vars.split("\n").length;
         sb.append(varsCount);
@@ -287,20 +279,6 @@ public class Debugger{
         String stack = getStack();
         sb.append(stack);
         clientHandler.sendBack(sb.toString());
-    }
-
-    private void setBreakpoints(String data) {
-        if (!data.isEmpty()) {
-            String[] parts = data.split("[|]+");
-            String file = parts[0];
-            HashMap<String, Breakpoint> bpMap = new HashMap<>();
-            for (int i = 1; i < parts.length; i++) {
-                bpMap.put(parts[i], new Breakpoint(parts[i]));
-            }
-            breakpoints.put(file, bpMap);
-        } else {
-            breakpoints.clear();
-        }
     }
 
     private void getNextElement() throws ParsingException {
@@ -313,22 +291,6 @@ public class Debugger{
             endOfFile = true;
         }
 
-    }
-
-    private boolean checkBreakpoint(GElement GElement) {
-        String filename = getFullPathOfCurrentGraph().getFileName().toString();
-        if (!breakpoints.isEmpty() && breakpoints.containsKey(filename) && breakpoints.get(filename).containsKey(GElement.getId())) {
-            Breakpoint breakpoint = breakpoints.get(filename).get(GElement.getId());
-            if (breakpoint.getHitCount() == 0) {
-                breakpoint.increaseHitCount();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private Path getFullPathOfCurrentGraph() {
-        return parsingGraphs.peek().getStateMachine().getPath();
     }
 
     private boolean executeNextElement() {
