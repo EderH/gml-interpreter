@@ -2,7 +2,7 @@ package parser;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import debugger.StateMachineDefaultDebugger;
+import debugger.StateMachineDebugger;
 import debugger.ParsingException;
 import deserializer.StateMachineDeserializer;
 import deserializer.StateNodeDeserializer;
@@ -22,7 +22,7 @@ public class ParsingJson {
     private Gson gson;
     private Path sourceDirectory;
 
-    public ParsingJson(Path path, StateMachineDefaultDebugger stateMachineDebugger) {
+    public ParsingJson(Path path, StateMachineDebugger stateMachineDebugger) {
         this.sourceDirectory = path;
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(StateMachine.class, new StateMachineDeserializer());

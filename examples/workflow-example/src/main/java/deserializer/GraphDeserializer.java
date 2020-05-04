@@ -1,7 +1,7 @@
 package deserializer;
 
 import com.google.gson.*;
-import gml.GElement;
+import graph.GElement;
 import workflow.ActivityNode;
 import workflow.Edge;
 import workflow.Graph;

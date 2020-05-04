@@ -1,4 +1,6 @@
-package debugger;
+package di;
+
+import debugger.DefaultDebugger;
 
 public class DefaultDebuggerModule extends DebuggerModule {
 

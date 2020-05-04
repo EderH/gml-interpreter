@@ -1,7 +1,7 @@
 package deserializer;
 
 import com.google.gson.*;
-import debugger.StateMachineDefaultDebugger;
+import debugger.StateMachineDebugger;
 import debugger.ParsingException;
 import parser.ParsingJson;
 import statemachine.StateNode;
@@ -13,9 +13,9 @@ public class StateNodeDeserializer implements JsonDeserializer<StateNode> {
 
 
     private Path path;
-    private StateMachineDefaultDebugger stateMachineDebugger;
+    private StateMachineDebugger stateMachineDebugger;
 
-    public StateNodeDeserializer(Path path, StateMachineDefaultDebugger stateMachineDebugger) {
+    public StateNodeDeserializer(Path path, StateMachineDebugger stateMachineDebugger) {
         this.path = path;
         this.stateMachineDebugger = stateMachineDebugger;
     }

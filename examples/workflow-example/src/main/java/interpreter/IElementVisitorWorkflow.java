@@ -1,6 +1,6 @@
 package interpreter;
 
-import gml.IElementVisitor;
+import graph.IElementVisitor;
 import workflow.ActivityNode;
 import workflow.Edge;
 import workflow.Graph;

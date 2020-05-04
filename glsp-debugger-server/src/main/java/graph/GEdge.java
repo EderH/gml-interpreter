@@ -1,4 +1,4 @@
-package gml;
+package graph;
 
 import lombok.Getter;
 import lombok.Setter;

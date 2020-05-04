@@ -1,6 +1,6 @@
 package statemachine;
 
-import gml.GEdge;
+import graph.GEdge;
 import interpreter.IElementVisitorStateMachine;
 import lombok.Getter;
 import lombok.Setter;

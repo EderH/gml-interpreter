@@ -1,7 +1,6 @@
-package debugger;
+package launcher;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import di.DebuggerModule;
 import lombok.Getter;
 import lombok.Setter;
 

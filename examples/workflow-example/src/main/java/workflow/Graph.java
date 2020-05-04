@@ -1,8 +1,6 @@
 package workflow;
 
-import gml.GEdge;
-import gml.GGraph;
-import gml.GNode;
+import graph.GGraph;
 import interpreter.IElementVisitorWorkflow;
 import lombok.Getter;
 import lombok.Setter;

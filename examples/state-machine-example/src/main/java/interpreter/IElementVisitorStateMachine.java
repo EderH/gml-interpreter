@@ -1,6 +1,6 @@
 package interpreter;
 
-import gml.IElementVisitor;
+import graph.IElementVisitor;
 import statemachine.StateMachine;
 import statemachine.StateNode;
 import statemachine.Transition;

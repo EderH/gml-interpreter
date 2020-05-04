@@ -26,7 +26,7 @@
         </dependency>
         <dependency>
             <groupId>gml-interpreter</groupId>
-            <artifactId>glsp-stateMachineDebugger-server</artifactId>
+            <artifactId>glsp-debugger-server</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

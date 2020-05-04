@@ -1,6 +1,8 @@
 package debugger;
 
-import gml.GElement;
+import graph.GElement;
+import interpreter.StateMachineInterpreter;
+import launcher.ClientHandler;
 import lombok.Getter;
 import lombok.Setter;
 import parser.ParsingGraph;
@@ -16,7 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class StateMachineDefaultDebugger extends DefaultDebugger {
+public class StateMachineDebugger extends DefaultDebugger {
 
     private boolean continueExc;
     private boolean steppingIn;
@@ -33,7 +35,7 @@ public class StateMachineDefaultDebugger extends DefaultDebugger {
     private Stack<ParsingGraph> parsingGraphs;
 
 
-    public StateMachineDefaultDebugger() {
+    public StateMachineDebugger() {
         this.breakpoints = new HashMap<>();
         this.parsingGraphs = new Stack<>();
 
@@ -297,7 +299,7 @@ public class StateMachineDefaultDebugger extends DefaultDebugger {
         if (checkBreakpoint(currentElement)) {
             return false;
         }
-        // currentElement.accept(new Interpreter());
+        currentElement.accept(new StateMachineInterpreter());
         return true;
     }
 }

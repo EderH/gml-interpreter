@@ -13,17 +13,6 @@ public class TransitionDeserializer implements JsonDeserializer<Transition> {
 
         Transition transition = new Transition();
 
-        /*if(jsonObject.has("probability")) {
-            edge = new WeightedEdge();
-            if(jsonObject.get("probability").getAsString().equals("high")) {
-                ((WeightedEdge) edge).setProbability(1);
-            } else {
-                ((WeightedEdge) edge).setProbability(0.2);
-            }
-        } else {
-            edge = new Edge();
-        }*/
-
         transition.setId(jsonObject.get("id").getAsString());
         transition.setSourceID(jsonObject.get("sourceId").getAsString());
         transition.setTargetID(jsonObject.get("targetId").getAsString());

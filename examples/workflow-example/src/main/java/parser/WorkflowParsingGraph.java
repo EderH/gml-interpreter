@@ -1,8 +1,8 @@
 package parser;
 
 import debugger.ParsingException;
-import gml.GElement;
-import gml.GGraph;
+import graph.GElement;
+import graph.GGraph;
 import lombok.Getter;
 import lombok.Setter;
 import utils.WeightedRandomBagUtil;

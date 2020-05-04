@@ -1,8 +1,10 @@
-package debugger;
+package launcher;
 
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import debugger.DefaultDebugger;
+import di.DefaultDebuggerModule;
 
 import java.io.IOException;
 import java.net.ServerSocket;

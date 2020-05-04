@@ -1,6 +1,7 @@
 package debugger;
 
-import gml.GElement;
+import graph.GElement;
+import launcher.ClientHandler;
 import lombok.Getter;
 import lombok.Setter;
 import parser.ParsingGraph;
@@ -13,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
-public abstract class DefaultDebugger implements IDebugger{
+public abstract class DefaultDebugger {
 
     @Setter
     @Getter
@@ -48,6 +49,8 @@ public abstract class DefaultDebugger implements IDebugger{
         this.breakpoints = new HashMap<>();
         this.parsingGraphs = new Stack<>();
     }
+
+    public abstract void processClientCommand(DebuggerUtils.DebugAction action, String dataInput);
 
     public void sendBack(DebuggerUtils.DebugAction responseToken, String response) {
         getClientHandler().sendBack(DebuggerUtils.responseToken(responseToken) + response);

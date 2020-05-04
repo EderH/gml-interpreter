@@ -2,11 +2,11 @@ package debugger;
 
 import di.DefaultDebuggerModule;
 
-public class WorkflowDebuggerModule extends DefaultDebuggerModule {
+public class StateMachineDebuggerModule extends DefaultDebuggerModule {
 
 
     @Override
     protected Class<? extends DefaultDebugger> bindDebugger() {
-        return WorkflowDebugger.class;
+        return StateMachineDebugger.class;
     }
 }

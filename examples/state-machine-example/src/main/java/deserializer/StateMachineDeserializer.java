@@ -1,7 +1,7 @@
 package deserializer;
 
 import com.google.gson.*;
-import gml.GElement;
+import graph.GElement;
 import statemachine.StateMachine;
 import statemachine.StateNode;
 import statemachine.Transition;

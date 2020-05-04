@@ -21,7 +21,7 @@
     </build>
     <modules>
         <module>examples/workflow-example</module>
-        <module>glsp-stateMachineDebugger-server</module>
+        <module>glsp-debugger-server</module>
         <module>examples/state-machine-example</module>
     </modules>
 

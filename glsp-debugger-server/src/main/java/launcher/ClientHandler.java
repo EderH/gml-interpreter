@@ -1,5 +1,6 @@
-package debugger;
+package launcher;
 
+import debugger.DefaultDebugger;
 import lombok.Getter;
 import lombok.Setter;
 import utils.DebuggerUtils;

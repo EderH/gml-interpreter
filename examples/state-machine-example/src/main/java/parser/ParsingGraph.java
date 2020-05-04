@@ -1,10 +1,10 @@
 package parser;
 
-import debugger.ClientHandler;
-import debugger.StateMachineDefaultDebugger;
+import launcher.ClientHandler;
+import debugger.StateMachineDebugger;
 import debugger.ParsingException;
-import gml.GElement;
-import gml.GGraph;
+import graph.GElement;
+import graph.GGraph;
 import lombok.Getter;
 import lombok.Setter;
 import statemachine.EventFlowEntry;
@@ -31,9 +31,9 @@ public class ParsingGraph {
     @Setter
     @Getter
     private GGraph stateMachine;
-    private StateMachineDefaultDebugger stateMachineDebugger;
+    private StateMachineDebugger stateMachineDebugger;
 
-    public ParsingGraph(StateMachine stateMachine, StateMachineDefaultDebugger stateMachineDebugger) {
+    public ParsingGraph(StateMachine stateMachine, StateMachineDebugger stateMachineDebugger) {
         this.stateMachine = stateMachine;
         this.linkedList = new LinkedList<>();
         this.eventFlow = new LinkedList<>();

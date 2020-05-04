@@ -1,7 +1,7 @@
 package parser;
 
 import debugger.ParsingException;
-import gml.GGraph;
+import graph.GGraph;
 
 public abstract class ParsingJson {
 

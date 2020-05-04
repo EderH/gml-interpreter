@@ -1,4 +1,4 @@
-package gml;
+package graph;
 
 public interface IElementVisitor {
 

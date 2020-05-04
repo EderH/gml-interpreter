@@ -1,6 +1,6 @@
 package debugger;
 
-import gml.GElement;
+import graph.GElement;
 import interpreter.WorkflowInterpreter;
 import parser.ParsingGraph;
 import parser.WorkflowParsingGraph;
@@ -211,7 +211,7 @@ public class WorkflowDebugger extends DefaultDebugger {
                     }
                     field.setAccessible(false);
                     String name = field.getName();
-                    // TODO local or global value
+
                     String var = "" + name + ":" + "0" + ":" + type + ":" + value;
                     vars.append(var);
                     vars.append("\n");

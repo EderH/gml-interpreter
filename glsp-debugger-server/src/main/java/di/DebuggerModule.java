@@ -1,6 +1,7 @@
-package debugger;
+package di;
 
 import com.google.inject.AbstractModule;
+import debugger.DefaultDebugger;
 
 public abstract class DebuggerModule extends AbstractModule {
 
