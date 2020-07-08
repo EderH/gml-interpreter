@@ -5,7 +5,6 @@ import launcher.ClientHandler;
 import lombok.Getter;
 import lombok.Setter;
 import parser.ParsingGraph;
-import parser.ParsingJson;
 import utils.DebuggerUtils;
 
 import javax.inject.Inject;
@@ -34,9 +33,6 @@ public abstract class DefaultDebugger {
     @Getter
     @Setter
     private boolean continueExc;
-    @Getter
-    @Setter
-    private ParsingJson parsingJson;
     @Getter
     @Setter
     private Map<String, HashMap<String, Breakpoint>> breakpoints;

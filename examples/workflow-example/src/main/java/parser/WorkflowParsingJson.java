@@ -19,7 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class WorkflowParsingJson extends ParsingJson {
+public class WorkflowParsingJson {
 
     private Gson gson;
     private Path sourceDirectory;

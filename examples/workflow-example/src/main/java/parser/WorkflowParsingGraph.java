@@ -49,7 +49,7 @@ public class WorkflowParsingGraph extends ParsingGraph{
                 if ((GElement = findElementWithTarget(currentEdge, ((Graph)graph))) != null) {
                     currentElement = GElement;
                 } else {
-                    throw new ParsingException("No source GElement found for edge " + currentEdge.getId());
+                    throw new ParsingException("No target element found for edge " + currentEdge.getId());
                 }
             }
         }

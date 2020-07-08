@@ -1,1 +1,1 @@
-# gml-interpreter
+# graph-interpreter

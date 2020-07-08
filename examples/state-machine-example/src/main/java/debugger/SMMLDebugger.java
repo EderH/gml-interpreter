@@ -2,14 +2,13 @@ package debugger;
 
 import graph.GElement;
 import interpreter.StateMachineInterpreter;
-import launcher.ClientHandler;
-import lombok.Getter;
-import lombok.Setter;
 import parser.ParsingGraph;
-import parser.ParsingJson;
+import parser.SMMLParsingGraph;
+import parser.SMMLParsingJson;
 import statemachine.EventFlowEntry;
 import statemachine.StateMachine;
 import statemachine.StateNode;
+import statemachine.Transition;
 import utils.DebuggerUtils;
 import utils.ReflectionUtil;
 
@@ -18,27 +17,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class StateMachineDebugger extends DefaultDebugger {
+public class SMMLDebugger extends DefaultDebugger {
 
-    private boolean continueExc;
-    private boolean steppingIn;
-    private boolean steppingOut;
-    private boolean endOfFile;
-    private GElement currentElement;
-    private ParsingJson parsingJson;
+    private SMMLParsingJson parsingJson;
 
-    @Setter
-    @Getter
-    private ClientHandler clientHandler;
-    private Map<String, HashMap<String, Breakpoint>> breakpoints;
-    @Getter
-    private Stack<ParsingGraph> parsingGraphs;
-
-
-    public StateMachineDebugger() {
-        this.breakpoints = new HashMap<>();
-        this.parsingGraphs = new Stack<>();
-
+    public SMMLDebugger() {
+        super();
     }
 
     public void processClientCommand(DebuggerUtils.DebugAction action, String dataInput) {
@@ -56,10 +40,10 @@ public class StateMachineDebugger extends DefaultDebugger {
                 processException(new ParsingException("Path to file not available"));
                 return;
             }
-            parsingJson = new ParsingJson(path.getParent(), this);
+            parsingJson = new SMMLParsingJson(path.getParent(), this);
             try {
                 StateMachine stateMachine = parsingJson.deserializeFile(path.getFileName().toString(), null);
-                parsingGraphs.push(new ParsingGraph(stateMachine, this));
+                getParsingGraphs().push(new SMMLParsingGraph(stateMachine, this));
             } catch (ParsingException exc) {
                 processException(exc);
                 return;
@@ -73,17 +57,17 @@ public class StateMachineDebugger extends DefaultDebugger {
 
         } else if (action == DebuggerUtils.DebugAction.CONTINUE) {
 
-            continueExc = true;
+            setContinueExc(true);
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STEP_IN) {
-            steppingIn = true;
-            continueExc = false;
+            setSteppingIn(true);
+            setContinueExc(false);
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STEP_OUT) {
-            steppingOut = true;
-            continueExc = false;
+            setSteppingOut(true);
+            setContinueExc(false);
             action = DebuggerUtils.DebugAction.STEP;
 
         } else if (action == DebuggerUtils.DebugAction.STACK) {
@@ -99,7 +83,7 @@ public class StateMachineDebugger extends DefaultDebugger {
             response.append(getEventFlow());
 
         } else if (action == DebuggerUtils.DebugAction.STEP) {
-            continueExc = false;
+            setContinueExc(false);
         } else {
             System.out.println("Unknown command: " + action.toString());
             return;
@@ -107,48 +91,47 @@ public class StateMachineDebugger extends DefaultDebugger {
 
         if (action == DebuggerUtils.DebugAction.STEP) {
             responseToken = DebuggerUtils.DebugAction.STEP;
-
-            if (currentElement instanceof StateNode && (((StateNode) currentElement).getSubStateMachine() != null)) {
-                parsingGraphs.push(new ParsingGraph(((StateNode) currentElement).getSubStateMachine(), this));
-                if (!steppingIn) {
-                    if (!executeBlock()) {
-                        return;
-                    }
+                if (getCurrentElement() instanceof StateNode && (((StateNode) getCurrentElement()).getSubStateMachine() != null) && isSteppingIn()) {
+                    getParsingGraphs().push(new SMMLParsingGraph(((StateNode) getCurrentElement()).getSubStateMachine(), this));
+                    /*if (!isSteppingIn()) {
+                        if (!executeBlock()) {
+                            return;
+                        }
+                    } */
                 }
-            }
-            if (steppingOut && parsingGraphs.size() > 1) {
-                parsingGraphs.pop();
-            }
-            try {
-                getNextElement();
-            } catch (ParsingException exc) {
-                processException(exc);
-                return;
-            }
-            if (endOfFile) {
-                if (parsingGraphs.size() > 1) {
-                    parsingGraphs.pop();
-                    endOfFile = false;
-                    try {
-                        getNextElement();
-                        executeNextElement();
-                        response.append(createResult());
-                    } catch (ParsingException exc) {
-                        processException(exc);
-                        return;
+                if (isSteppingOut() && getParsingGraphs().size() > 1) {
+                    getParsingGraphs().pop();
+                }
+                try {
+                    getNextElement();
+                } catch (ParsingException exc) {
+                    processException(exc);
+                    return;
+                }
+                if (isEndOfFile()) {
+                    if (getParsingGraphs().size() > 1) {
+                        getParsingGraphs().pop();
+                        setEndOfFile(false);
+                        try {
+                            getNextElement();
+                            executeNextElement();
+                            response.append(createResult());
+                        } catch (ParsingException exc) {
+                            processException(exc);
+                            return;
+                        }
+                    } else {
+                        responseToken = DebuggerUtils.DebugAction.END;
                     }
+
                 } else {
-                    responseToken = DebuggerUtils.DebugAction.END;
+
+                    executeNextElement();
+                    response.append(createResult());
                 }
 
-            } else {
-
-                executeNextElement();
-                response.append(createResult());
             }
-
-        }
-        sendBack(responseToken, response.toString());
+            sendBack(responseToken, response.toString());
     }
 
     public boolean executeBlock() {
@@ -159,9 +142,9 @@ public class StateMachineDebugger extends DefaultDebugger {
             } catch (ParsingException exc) {
                 processException(exc);
             }
-            if (endOfFile) {
-                parsingGraphs.pop();
-                endOfFile = false;
+            if (isEndOfFile()) {
+                getParsingGraphs().pop();
+                setEndOfFile(false);
                 return true;
             }
             if (!executeNextElement()) {
@@ -177,7 +160,7 @@ public class StateMachineDebugger extends DefaultDebugger {
         String filename = getFullPathOfCurrentGraph().toString();
         response.append(filename);
         response.append("\n");
-        response.append(currentElement.getId());
+        response.append(getCurrentElement().getId());
         response.append("\n");
 
         String vars = getVariables();
@@ -203,17 +186,17 @@ public class StateMachineDebugger extends DefaultDebugger {
     }
 
     public void sendBack(DebuggerUtils.DebugAction responseToken, String response) {
-        clientHandler.sendBack(DebuggerUtils.responseToken(responseToken) + response);
+        getClientHandler().sendBack(DebuggerUtils.responseToken(responseToken) + response);
     }
 
     private String getStack() {
         StringBuilder stack = new StringBuilder();
-        ListIterator iterator = parsingGraphs.listIterator(parsingGraphs.size());
+        ListIterator iterator = getParsingGraphs().listIterator(getParsingGraphs().size());
 
         while (iterator.hasPrevious()) {
             ParsingGraph previous = (ParsingGraph) iterator.previous();
-            String filename = previous.getStateMachine().getPath().getFileName().toString();
-            String frame = "" + filename + ":" + previous.getCurrentElement().getId();
+            String filename = previous.getGraph().getPath().getFileName().toString();
+            String frame = "" + filename + ":" + ((SMMLParsingGraph)previous).getCurrentElement().getId();
             stack.append(frame);
             stack.append("\n");
         }
@@ -224,19 +207,19 @@ public class StateMachineDebugger extends DefaultDebugger {
     private String getVariables() {
         StringBuilder vars = new StringBuilder();
         try {
-            List<Field> fields = ReflectionUtil.getInheritedDeclaredFields(currentElement.getClass(), Object.class);
+            List<Field> fields = ReflectionUtil.getInheritedDeclaredFields(getCurrentElement().getClass(), Object.class);
             for (Field field : fields) {
                 String type = field.getType().toString();
                 field.setAccessible(true);
-                String value = "";
-                if (field.get(currentElement) != null) {
+                String value;
+                if (field.get(getCurrentElement()) != null) {
                     if (field.getType() == StateMachine.class) {
-                        value = ReflectionUtil.getInheritedDeclaredFieldValue(field.get(currentElement), "id", Object.class).toString() + ".sm";
+                        value = ReflectionUtil.getInheritedDeclaredFieldValue(field.get(getCurrentElement()), "id", Object.class).toString() + ".sm";
                     } else {
-                        value = field.get(currentElement).toString();
+                        value = field.get(getCurrentElement()).toString();
                     }
                 } else {
-                    value = "null";
+                    value = "empty";
                 }
                 field.setAccessible(false);
                 String name = field.getName();
@@ -254,7 +237,7 @@ public class StateMachineDebugger extends DefaultDebugger {
     private String getEventFlow() {
         StringBuilder events = new StringBuilder();
 
-        ListIterator iterator = parsingGraphs.peek().getEventFlow().listIterator(parsingGraphs.peek().getEventFlow().size());
+        ListIterator iterator = ((SMMLParsingGraph)getParsingGraphs().peek()).getEventFlow().listIterator(((SMMLParsingGraph)getParsingGraphs().peek()).getEventFlow().size());
         while (iterator.hasPrevious()) {
             EventFlowEntry previous = (EventFlowEntry) iterator.previous();
             String filename = getFullPathOfCurrentGraph().getFileName().toString();
@@ -279,27 +262,41 @@ public class StateMachineDebugger extends DefaultDebugger {
         sb.append(vars);
 
         String stack = getStack();
+        int stackCount = stack.equals("") ? 0 : stack.split("\n").length;
+        sb.append(stackCount);
+        sb.append("\n");
         sb.append(stack);
-        clientHandler.sendBack(sb.toString());
+
+        String eventFlow = getEventFlow();
+        int eventFlowCount = eventFlow.equals("") ? 0 : eventFlow.split("\n").length;
+        sb.append(eventFlowCount);
+        sb.append("\n");
+        sb.append(eventFlow);
+        getClientHandler().sendBack(sb.toString());
     }
 
     private void getNextElement() throws ParsingException {
-        ParsingGraph parser = parsingGraphs.peek();
+        ParsingGraph parser = getParsingGraphs().peek();
         GElement element = parser.parseNextElement();
 
         if (element != null) {
-            currentElement = element;
+            setCurrentElement(element);
+            if(!parser.getGraph().getElementList().contains(getCurrentElement())){
+                getParsingGraphs().pop();
+                ((SMMLParsingGraph)getParsingGraphs().peek()).setCurrentElement(element);
+                ((SMMLParsingGraph)getParsingGraphs().peek()).setCurrentEdge((Transition)element);
+            }
         } else {
-            endOfFile = true;
+            setEndOfFile(true);
         }
 
     }
 
     private boolean executeNextElement() {
-        if (checkBreakpoint(currentElement)) {
+        if (checkBreakpoint(getCurrentElement())) {
             return false;
         }
-        currentElement.accept(new StateMachineInterpreter());
+        getCurrentElement().accept(new StateMachineInterpreter());
         return true;
     }
 }

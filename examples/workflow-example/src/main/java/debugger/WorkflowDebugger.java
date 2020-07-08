@@ -17,6 +17,8 @@ import java.util.*;
 
 public class WorkflowDebugger extends DefaultDebugger {
 
+    private WorkflowParsingJson parsingJson;
+
     public WorkflowDebugger() {
         super();
     }
@@ -37,9 +39,9 @@ public class WorkflowDebugger extends DefaultDebugger {
                 processException(new ParsingException("Path to file not available"));
                 return;
             }
-            setParsingJson(new WorkflowParsingJson(path.getParent(), this));
+            parsingJson = new WorkflowParsingJson(path.getParent(), this);
             try {
-                Graph graph = (Graph)getParsingJson().deserializeFile(path.getFileName().toString());
+                Graph graph = parsingJson.deserializeFile(path.getFileName().toString());
                 getParsingGraphs().push(new WorkflowParsingGraph(graph));
             } catch (ParsingException exc) {
                 processException(exc);
@@ -54,7 +56,7 @@ public class WorkflowDebugger extends DefaultDebugger {
                 Map<String, Breakpoint> m1 = getBreakpoints().get(k);
                 System.out.println("File: " + k);
                 for(String k1 : m1.keySet()) {
-                    System.out.println("breakpoint: " + m1.get(k1).getId());
+                    System.out.println("breakpoint: " + m1.get(k1).getElementID());
                 }
             }
 
@@ -102,7 +104,7 @@ public class WorkflowDebugger extends DefaultDebugger {
                 }
             }
             if (isSteppingOut() && getParsingGraphs().size() > 1) {
-                getParsingGraphs().pop();
+                executeBlock();
             }
             try {
                 getNextElement();
@@ -207,7 +209,7 @@ public class WorkflowDebugger extends DefaultDebugger {
                             value = field.get(getCurrentElement()).toString();
                         }
                     } else {
-                        value = "null";
+                        value = "empty";
                     }
                     field.setAccessible(false);
                     String name = field.getName();

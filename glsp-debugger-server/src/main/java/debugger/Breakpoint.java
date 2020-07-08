@@ -7,13 +7,13 @@ public class Breakpoint {
 
     @Setter
     @Getter
-    private String id;
+    private String elementID;
     @Setter
     @Getter
     private int hitCount;
 
-    public Breakpoint(String name) {
-        this.id = name;
+    public Breakpoint(String elementID) {
+        this.elementID = elementID;
         this.hitCount = 0;
     }
 
